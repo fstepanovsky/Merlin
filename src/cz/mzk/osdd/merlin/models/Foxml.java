@@ -10,7 +10,7 @@ import org.w3c.dom.NodeList;
  * Created by Jakub Kremlacek on 6.4.17.
  */
 public class Foxml {
-    public static final String IMAGESERVER_LOCATION = "http://imageserver.mzk.cz/";
+    public static final String IMAGESERVER_LOCATION = "http://imageserver.mzk.cz";
 
     public static final String DATASTREAM_FILENAME_IMG_FULL = "big.jpg";
     public static final String DATASTREAM_FILENAME_IMG_PREVIEW = "preview.jpg";
@@ -61,7 +61,7 @@ public class Foxml {
             throw new IllegalArgumentException("unsupported datastream: " + datastream);
         }
 
-        Element img = doc.getElementById(datastream);
+        Element img = Utils.filterDatastreamFromDocument(doc, datastream);
 
         if (img == null) {
             throw new IllegalArgumentException("missing " + datastream);
@@ -132,11 +132,11 @@ public class Foxml {
         if (clL.getLength() == 1) {
             cL = (Element) clL.item(0);
             cL.setAttribute("TYPE", "URL");
-            cL.setAttribute("REF", getImagePath() + imageName);
+            cL.setAttribute("REF",   getImagePath() + uuid + "/" + imageName);
         } else if (clL.getLength() == 0) {
             cL = doc.createElement("contentLocation");
             cL.setAttribute("TYPE", "URL");
-            cL.setAttribute("REF", getImagePath() + imageName);
+            cL.setAttribute("REF", getImagePath() + uuid + "/" + imageName);
 
             img.appendChild(cL);
         } else {
@@ -148,14 +148,22 @@ public class Foxml {
 
         NodeList imgFullChildren = e.getChildNodes();
 
-        if (imgFullChildren.getLength() > 1 || !imgFullChildren.item(0).getNodeName().equals("binaryContent")) {
-            throw new IllegalArgumentException("more than one binaryContent within " + e.getAttribute("ID"));
+        Element bC = null;
+
+        for (int i = 0; i < imgFullChildren.getLength(); i++){
+            if (imgFullChildren.item(i).getNodeName().equals("binaryContent")) {
+                if (bC == null) {
+                    bC = (Element) imgFullChildren.item(i);
+                } else {
+                    throw new IllegalArgumentException("contains multiple binaryContent in " + e.getTagName());
+                }
+            }
         }
 
-        if (imgFullChildren.getLength() == 1) {
-            e.removeChild(imgFullChildren.item(0));
-        } else {
+        if (bC == null) {
             System.err.println("Warning: Element " + e.getTagName() + "does not contain binaryContent element");
+        } else {
+            e.removeChild(bC);
         }
     }
 }

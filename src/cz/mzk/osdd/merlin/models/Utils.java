@@ -104,4 +104,20 @@ public class Utils {
 
         return dBuilder.parse(file);
     }
+
+    /**
+     * getElementById is not working because of ID chars
+     *
+     * @param id to be filtered from document. Note that ID must be unique otherwise Element returned will be the first found.
+     * @return element with specified ID
+     */
+    public static Element filterDatastreamFromDocument(Document doc, String id) {
+        NodeList nl = doc.getElementsByTagName("datastreamVersion");
+
+        for (int i = 0; i < nl.getLength(); i++) {
+            if (((Element) nl.item(i)).getAttribute("ID").equals(id)) return (Element) nl.item(i);
+        }
+
+        return null;
+    }
 }

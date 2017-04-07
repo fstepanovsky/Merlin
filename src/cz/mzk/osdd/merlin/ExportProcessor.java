@@ -33,6 +33,12 @@ public class ExportProcessor {
         OUT_PATH = Paths.get(path).resolve(OUT);
     }
 
+    public ExportProcessor(String in, String out) {
+        IN_PATH = Paths.get(in);
+        OUT_PATH = Paths.get(out);
+    }
+
+
     public int run() {
         try {
             switch (checkDirectories()) {
@@ -43,6 +49,9 @@ public class ExportProcessor {
                     processDirectory();
                     break;
             }
+
+            processTitles();
+
         } catch (InvalidArgumentException e) {
             e.printStackTrace();
             return -1;
@@ -56,8 +65,6 @@ public class ExportProcessor {
             e.printStackTrace();
             return -1;
         }
-
-        processTitles();
 
         return 0;
     }
@@ -74,18 +81,9 @@ public class ExportProcessor {
         else reportAccessingProtectedMethod();
     }
 
-    private void processTitles() {
+    private void processTitles() throws ParserConfigurationException, SAXException, IOException {
         for (Title title : titles) {
-            try {
-                title.processTitle(OUT_PATH);
-            } catch (IOException e) {
-                System.err.println("Error occured during copying image.");
-                e.printStackTrace();
-            } catch (SAXException e) {
-                e.printStackTrace();
-            } catch (ParserConfigurationException e) {
-                e.printStackTrace();
-            }
+             title.processTitle(OUT_PATH);
         }
     }
 
