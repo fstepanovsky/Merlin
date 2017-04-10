@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,6 +24,8 @@ public class ExportProcessor {
 
     private static final String IN = "in";
     private static final String OUT = "out";
+
+    public static final String OUTPUT_PACK_PATH = "proarcExport_" + ((new SimpleDateFormat("yyyy.MM.dd_HH:mm")).format(new Date()));
 
     private final Path IN_PATH;
     private final Path OUT_PATH;
@@ -38,7 +42,6 @@ public class ExportProcessor {
         OUT_PATH = Paths.get(out);
     }
 
-
     public int run() {
         try {
             switch (checkDirectories()) {
@@ -49,6 +52,8 @@ public class ExportProcessor {
                     processDirectory();
                     break;
             }
+
+            System.out.println("Preparing export pack into: " + OUTPUT_PACK_PATH);
 
             processTitles();
 
@@ -99,8 +104,7 @@ public class ExportProcessor {
 
         for (File subdir : subdirs) processDirectory(subdir.toPath());
 
-        if (files.length > 0) titles.add(new Title(directory, files));
-
+        if (files.length > 0) titles.add(new Title(directory, files, OUTPUT_PACK_PATH));
     }
 
     private AppState checkDirectories() throws InvalidArgumentException {

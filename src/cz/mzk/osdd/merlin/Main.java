@@ -10,7 +10,7 @@ package cz.mzk.osdd.merlin;
 
 public class Main {
 
-    public static final String defaultPath = "./";
+    public static final String defaultPath = "";
 
     public static void main(String[] args) {
         ExportProcessor processor = null;

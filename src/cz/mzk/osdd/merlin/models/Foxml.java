@@ -4,6 +4,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.nio.file.Path;
+
 /**
  * Wrapper for Fedora document XML, simplifies fixing datastream content locations
  *
@@ -51,6 +58,10 @@ public class Foxml {
      */
     public void processDatastream(String datastream) throws IllegalArgumentException {
 
+        if (datastream == null) {
+            throw new IllegalArgumentException("Datastream cannot be null.");
+        }
+
         if (
                 !(
                 datastream.equals(DATASTREAM_IMG_FULL) ||
@@ -58,7 +69,7 @@ public class Foxml {
                 datastream.equals(DATASTREAM_IMG_THUMB)
                 ))
         {
-            throw new IllegalArgumentException("unsupported datastream: " + datastream);
+            throw new IllegalArgumentException("Unsupported datastream: " + datastream + ".");
         }
 
         Element img = Utils.filterDatastreamFromDocument(doc, datastream);
@@ -162,8 +173,20 @@ public class Foxml {
 
         if (bC == null) {
             System.err.println("Warning: Element " + e.getTagName() + "does not contain binaryContent element");
-        } else {
-            e.removeChild(bC);
+            return;
         }
+
+        e.removeChild(bC);
+
+        e.removeAttribute("SIZE");
     }
+
+    public void save(Path toKramerius) throws TransformerException {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource source = new DOMSource(doc);
+        StreamResult streamResult =  new StreamResult(toKramerius.resolve(uuid + ".xml").toFile());
+        transformer.transform(source, streamResult);
+    }
+
 }

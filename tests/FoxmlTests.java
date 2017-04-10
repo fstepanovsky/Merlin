@@ -35,28 +35,66 @@ public class FoxmlTests {
     }
 
     @Test
+    public void processNullDatastream() throws ParserConfigurationException, SAXException, IOException {
+
+        Document d = getTestingDocument();
+        Foxml f = new Foxml(d, " ", "MZK01", "aaaaaaa1-1111-1111-1111-2f890f11f9d5");
+
+        assertThrows(IllegalArgumentException.class, () -> f.processDatastream(null));
+    }
+
+    @Test
     public void processImgFull() throws ParserConfigurationException, SAXException, IOException {
+        processDatastream(Foxml.DATASTREAM_IMG_FULL, Foxml.DATASTREAM_FILENAME_IMG_FULL);
+    }
+
+    @Test
+    public void processImgPreview() throws IOException, SAXException, ParserConfigurationException {
+        processDatastream(Foxml.DATASTREAM_IMG_PREVIEW, Foxml.DATASTREAM_FILENAME_IMG_PREVIEW);
+    }
+
+    @Test
+    public void processImgThumb() throws IOException, SAXException, ParserConfigurationException {
+        processDatastream(Foxml.DATASTREAM_IMG_THUMB, Foxml.DATASTREAM_FILENAME_IMG_THUMB);
+    }
+
+    private void processDatastream(String ds, String dsFilename) throws ParserConfigurationException, SAXException, IOException {
         Document d = getTestingDocument();
 
         Foxml f = new Foxml(d, TESTING_IMAGE_LOCATION, TESTING_FOXML_BASE, TESTING_FOXML_UUID);
 
-        f.processDatastream(Foxml.DATASTREAM_IMG_FULL);
+        f.processDatastream(ds);
 
-        assertEquals(0, Utils.filterDatastreamFromDocument(d, Foxml.DATASTREAM_IMG_FULL).getElementsByTagName("binaryContent").getLength());
-        assertEquals(1, Utils.filterDatastreamFromDocument(d, Foxml.DATASTREAM_IMG_FULL).getElementsByTagName("contentLocation").getLength());
+        checkDatastream(d, ds);
 
         assertEquals(
-                Foxml.IMAGESERVER_LOCATION + "/" + TESTING_FOXML_BASE + "/111/222/333/" + TESTING_FOXML_UUID + "/big.jpg",
-                ((Element) (Utils.filterDatastreamFromDocument(d, Foxml.DATASTREAM_IMG_FULL).getElementsByTagName("contentLocation")).item(0)).getAttribute("REF"));
+                Foxml.IMAGESERVER_LOCATION + "/" + TESTING_FOXML_BASE + "/111/222/333/" + TESTING_FOXML_UUID + "/" + dsFilename,
+                ((Element) (Utils.filterDatastreamFromDocument(d, ds).getElementsByTagName("contentLocation")).item(0)).getAttribute("REF"));
     }
 
-    @Test
-    public void processImgPreview() {
+    private void checkDatastream(Document d, String ds) {
+        String[] others;
 
-    }
+        switch (ds) {
+            case Foxml.DATASTREAM_IMG_FULL:
+                others = new String[] {Foxml.DATASTREAM_IMG_PREVIEW, Foxml.DATASTREAM_IMG_THUMB};
+                break;
+            case Foxml.DATASTREAM_IMG_PREVIEW:
+                others = new String[] {Foxml.DATASTREAM_IMG_FULL, Foxml.DATASTREAM_IMG_THUMB};
+                break;
+            case Foxml.DATASTREAM_IMG_THUMB:
+                others = new String[] {Foxml.DATASTREAM_IMG_FULL, Foxml.DATASTREAM_IMG_PREVIEW};
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown datastream: " + ds);
+        }
 
-    @Test
-    public void processImgThumb() {
+        assertEquals(0, Utils.filterDatastreamFromDocument(d, ds).getElementsByTagName("binaryContent").getLength());
+        assertEquals(1, Utils.filterDatastreamFromDocument(d, ds).getElementsByTagName("contentLocation").getLength());
 
+        for (int i = 0; i < others.length; i++) {
+            assertEquals(1, Utils.filterDatastreamFromDocument(d, others[i]).getElementsByTagName("binaryContent").getLength());
+            assertEquals(0, Utils.filterDatastreamFromDocument(d, others[i]).getElementsByTagName("contentLocation").getLength());
+        }
     }
 }

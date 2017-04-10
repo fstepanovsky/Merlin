@@ -7,6 +7,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,6 +25,8 @@ public class Title {
     private static final String FILE_K4_SUFFIX = ".xml";
     private static final String FILE_IMAGE_SUFFIX = ".NDK_USER";
 
+    public final String OUTPUT_PACK_PATH;
+
     public final Path location;
 
     private String parentUUID;
@@ -31,8 +34,10 @@ public class Title {
     private String base = null;
 
     private Map<String, ExportPack> packs = new HashMap<>();
+    private List<String> notModifiedFOXMLs = null;
 
-    public Title(Path location, File[] files) throws InvalidArgumentException, ParserConfigurationException, SAXException, IOException {
+    public Title(Path location, File[] files, String outputPackPath) throws InvalidArgumentException, ParserConfigurationException, SAXException, IOException {
+        this.OUTPUT_PACK_PATH = outputPackPath;
         this.location = location;
         checkFiles(files);
     }
@@ -101,6 +106,8 @@ public class Title {
         for (String uuid : uuidsToRemove) {
             packs.remove(uuid);
         }
+
+        notModifiedFOXMLs = uuidsToRemove;
     }
 
     private boolean isPage(ExportPack pack) throws ParserConfigurationException, IOException, SAXException {
@@ -116,10 +123,14 @@ public class Title {
     }
 
     private static void reportMissingPart(ExportPack pack, String missingPart) {
-        System.err.println("Pack " + pack.uuid + missingPart + ". Skipping.");
+        System.err.println("Pack " + pack.uuid + missingPart + ". Terminating.");
     }
 
-    public void processTitle(Path out) throws IOException, ParserConfigurationException, SAXException {
+    public void processTitle(Path outRoot) throws IOException, ParserConfigurationException, SAXException {
+
+        Path outFoxml = outRoot.resolve(OUTPUT_PACK_PATH).resolve("kramerius").resolve(parentUUID);
+
+        if (!outFoxml.toFile().exists()) outFoxml.toFile().mkdirs();
 
         Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getSignatureFromRootObject(this.location));
 
@@ -131,7 +142,7 @@ public class Title {
         sysno = sb.first;
         base = sb.second;
 
-        Path imsDirectory = out.resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
+        Path imsDirectory = outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver").resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
 
         if (!imsDirectory.toFile().exists()) imsDirectory.toFile().mkdirs();
 
@@ -146,12 +157,21 @@ public class Title {
                 f.processDatastream(Foxml.DATASTREAM_IMG_THUMB);
                 f.processDatastream(Foxml.DATASTREAM_IMG_PREVIEW);
                 f.processRDF();
+                f.save(outFoxml);
             } catch (IllegalArgumentException e) {
                 reportMissingPart(pack, e.getMessage());
-                continue;
+                return;
+            } catch (TransformerException e) {
+                System.err.println("Cannot save " + pack.uuid + ".xml. Terminating.");
+                e.printStackTrace();
+                return;
             }
 
             Files.copy(pack.getImageExportPath(), imagePath);
+        }
+
+        for (String foxml : notModifiedFOXMLs) {
+            Files.copy(location.resolve(foxml + ".xml"), outFoxml.resolve(foxml + ".xml"));
         }
     }
 }
