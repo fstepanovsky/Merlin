@@ -1,3 +1,4 @@
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import cz.mzk.osdd.merlin.models.Pair;
 import cz.mzk.osdd.merlin.models.Utils;
 import org.junit.jupiter.api.Test;
@@ -36,12 +37,12 @@ public class UtilsTests {
     }
 
     @Test
-    public void getSysnoWithBaseFromAlephTest() {
+    public void getSysnoWithBaseFromAlephTest() throws InvalidArgumentException {
         assertEquals(Pair.create("001564911","MZK01"), Utils.getSysnoWithBaseFromAleph("Mpa-0174.951,3960-19"));
     }
 
     @Test
-    public void getSysnoWithBaseFromAlephNullTest() {
+    public void getSysnoWithBaseFromAlephNullTest() throws InvalidArgumentException {
         assertEquals(null, Utils.getSysnoWithBaseFromAleph(null));
     }
 }

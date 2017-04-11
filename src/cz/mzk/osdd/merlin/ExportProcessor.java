@@ -26,6 +26,7 @@ public class ExportProcessor {
     private static final String OUT = "out";
 
     public static final String OUTPUT_PACK_PATH = "proarcExport_" + ((new SimpleDateFormat("yyyy.MM.dd_HH:mm")).format(new Date()));
+    private static final boolean DETAILED_OUTPUT = true;
 
     private final Path IN_PATH;
     private final Path OUT_PATH;
@@ -86,7 +87,7 @@ public class ExportProcessor {
         else reportAccessingProtectedMethod();
     }
 
-    private void processTitles() throws ParserConfigurationException, SAXException, IOException {
+    private void processTitles() throws ParserConfigurationException, SAXException, IOException, InvalidArgumentException {
         for (Title title : titles) {
              title.processTitle(OUT_PATH);
         }
@@ -104,7 +105,7 @@ public class ExportProcessor {
 
         for (File subdir : subdirs) processDirectory(subdir.toPath());
 
-        if (files.length > 0) titles.add(new Title(directory, files, OUTPUT_PACK_PATH));
+        if (files.length > 0) titles.add(new Title(directory, files, OUTPUT_PACK_PATH, DETAILED_OUTPUT));
     }
 
     private AppState checkDirectories() throws InvalidArgumentException {

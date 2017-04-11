@@ -26,6 +26,7 @@ public class Title {
     private static final String FILE_IMAGE_SUFFIX = ".NDK_USER";
 
     public final String OUTPUT_PACK_PATH;
+    public final boolean LOUD;
 
     public final Path location;
 
@@ -36,9 +37,12 @@ public class Title {
     private Map<String, ExportPack> packs = new HashMap<>();
     private List<String> notModifiedFOXMLs = null;
 
-    public Title(Path location, File[] files, String outputPackPath) throws InvalidArgumentException, ParserConfigurationException, SAXException, IOException {
+    public Title(Path location, File[] files, String outputPackPath, boolean loud) throws InvalidArgumentException, ParserConfigurationException, SAXException, IOException {
         this.OUTPUT_PACK_PATH = outputPackPath;
+        this.LOUD = loud;
+
         this.location = location;
+
         checkFiles(files);
     }
 
@@ -108,6 +112,10 @@ public class Title {
         }
 
         notModifiedFOXMLs = uuidsToRemove;
+
+        if (LOUD) {
+            System.out.println("Title " + parentUUID + " filecheck completed.");
+        }
     }
 
     private boolean isPage(ExportPack pack) throws ParserConfigurationException, IOException, SAXException {
@@ -126,21 +134,25 @@ public class Title {
         System.err.println("Pack " + pack.uuid + missingPart + ". Terminating.");
     }
 
-    public void processTitle(Path outRoot) throws IOException, ParserConfigurationException, SAXException {
+    public void processTitle(Path outRoot) throws IOException, ParserConfigurationException, SAXException, InvalidArgumentException {
 
-        Path outFoxml = outRoot.resolve(OUTPUT_PACK_PATH).resolve("kramerius").resolve(parentUUID);
+        if (LOUD) System.out.println("Started processing title " + parentUUID);
 
-        if (!outFoxml.toFile().exists()) outFoxml.toFile().mkdirs();
-
+        if (LOUD) System.out.println("Receiving Sysno from Aleph");
         Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getSignatureFromRootObject(this.location));
 
         if (sb == null) {
             System.err.println("Could not receive Sysno and Base from Aleph. Skipping title at: " + location);
             return;
+        } else if (LOUD){
+            System.out.println("Received Sysno from Aleph");
         }
 
         sysno = sb.first;
         base = sb.second;
+
+        Path outFoxml = outRoot.resolve(OUTPUT_PACK_PATH).resolve("kramerius").resolve(parentUUID);
+        if (!outFoxml.toFile().exists()) outFoxml.toFile().mkdirs();
 
         Path imsDirectory = outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver").resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
 
@@ -173,5 +185,7 @@ public class Title {
         for (String foxml : notModifiedFOXMLs) {
             Files.copy(location.resolve(foxml + ".xml"), outFoxml.resolve(foxml + ".xml"));
         }
+
+        if (LOUD) System.out.println("Title " + parentUUID + " processed.");
     }
 }
