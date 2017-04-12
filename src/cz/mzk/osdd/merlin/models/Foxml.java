@@ -123,6 +123,7 @@ public class Foxml {
             ktu = doc.createElement("kramerius4:tiles-url");
             ktu.setTextContent(getImagePath() + uuid);
             rdfL.item(0).appendChild(ktu);
+            ((Element) rdfL.item(0).getParentNode()).setAttribute("xmlns:kramerius4", "http://www.nsdl.org/ontologies/relationships#");
         } else {
             throw new IllegalArgumentException("not containing single or none kramerius4:tiles-url");
         }

@@ -149,7 +149,7 @@ public class Title {
         }
 
         sysno = sb.first;
-        base = sb.second;
+        base = sb.second.toLowerCase();
 
         Path outFoxml = outRoot.resolve(OUTPUT_PACK_PATH).resolve("kramerius").resolve(parentUUID);
         if (!outFoxml.toFile().exists()) outFoxml.toFile().mkdirs();
