@@ -168,4 +168,13 @@ public class Utils {
 
         return doc;
     }
+
+    public static void mergeTwoDirectories(File dir1, File dir2){
+        String targetDirPath = dir1.getAbsolutePath();
+        File[] files = dir2.listFiles();
+        for (File file : files) {
+            file.renameTo(new File(targetDirPath+File.separator+file.getName()));
+            System.out.println(file.getName() + " is moved!");
+        }
+    }
 }

@@ -77,6 +77,8 @@ public class Title {
 
                     packs.put(uuid, p);
                 }
+            } else if (f.getName().equals("proarc_export_status.log")) {
+                continue;
             } else {
                 throw new InvalidArgumentException(new String[]{"Unknown file type : " + f.getName()});
             }

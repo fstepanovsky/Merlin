@@ -3,12 +3,14 @@ package cz.mzk.osdd.merlin;
 import com.sun.javaws.exceptions.InvalidArgumentException;
 import cz.mzk.osdd.merlin.models.AppState;
 import cz.mzk.osdd.merlin.models.Title;
+import cz.mzk.osdd.merlin.models.Utils;
 import org.xml.sax.SAXException;
 
 import javax.print.attribute.standard.Severity;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -50,6 +52,7 @@ public class ExportProcessor {
                     System.out.println(Severity.REPORT.getName() + " Created mandatory IO directories. Rerun app to start processing.");
                     break;
                 case FINE:
+                    mergeImageAndKrameriusDirectories();
                     processDirectory();
                     break;
             }
@@ -73,6 +76,30 @@ public class ExportProcessor {
         }
 
         return 0;
+    }
+
+    private void mergeImageAndKrameriusDirectories() throws IOException {
+        File[] subdirs = IN_PATH.toFile().listFiles(File::isDirectory);
+        String dirName;
+
+        for (File subdir : subdirs) {
+            if (subdir.getName().startsWith("k4_")) {
+                dirName = subdir.getName().substring("k4_".length());
+            } else if (subdir.getName().endsWith(".NDK_USER")) {
+                dirName = subdir.getName().substring(0, subdir.getName().length() - ".NDK_USER".length());
+            } else {
+                System.out.println("skipping " + subdir.getName());
+                continue;
+            }
+
+            Path dirPath = IN_PATH.resolve(dirName);
+
+            if (!dirPath.toFile().exists()) dirPath.toFile().mkdir();
+
+            Utils.mergeTwoDirectories(dirPath.toFile(), IN_PATH.resolve(subdir.getName()).toFile());
+
+            Files.delete(IN_PATH.resolve(subdir.getName()));
+        }
     }
 
     public List<Title> getTitlesDebug() throws IllegalAccessException {
