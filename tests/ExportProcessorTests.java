@@ -28,7 +28,7 @@ public class ExportProcessorTests {
 
         ExportProcessor processor = new ExportProcessor(inputPath);
 
-        assertEquals(0, processor.run());
+        assertEquals(0, processor.runBatch());
 
         try {
             assertEquals(0, processor.getTitlesDebug().size());
@@ -50,7 +50,7 @@ public class ExportProcessorTests {
 
         expected.put(uuid_1, new ExportPack(uuid_1));
 
-        assertEquals(0, processor.run());
+        assertEquals(0, processor.runBatch());
 
         try {
             assertEquals(expected.size(), processor.getTitlesDebug().get(0).getPackCount());

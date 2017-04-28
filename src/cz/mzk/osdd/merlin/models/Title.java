@@ -1,6 +1,5 @@
 package cz.mzk.osdd.merlin.models;
 
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -37,7 +36,7 @@ public class Title {
     private Map<String, ExportPack> packs = new HashMap<>();
     private List<String> notModifiedFOXMLs = null;
 
-    public Title(Path location, File[] files, String outputPackPath, boolean loud) throws InvalidArgumentException, ParserConfigurationException, SAXException, IOException {
+    public Title(Path location, File[] files, String outputPackPath, boolean loud) throws IllegalArgumentException, ParserConfigurationException, SAXException, IOException {
         this.OUTPUT_PACK_PATH = outputPackPath;
         this.LOUD = loud;
 
@@ -50,7 +49,7 @@ public class Title {
         return packs.size();
     }
 
-    private void checkFiles(File[] files) throws InvalidArgumentException, IOException, SAXException, ParserConfigurationException {
+    private void checkFiles(File[] files) throws IllegalArgumentException, IOException, SAXException, ParserConfigurationException {
         for (File f : files) {
             String uuid;
 
@@ -80,7 +79,7 @@ public class Title {
             } else if (f.getName().equals("proarc_export_status.log")) {
                 continue;
             } else {
-                throw new InvalidArgumentException(new String[]{"Unknown file type : " + f.getName()});
+                throw new IllegalArgumentException("Unknown file type : " + f.getName());
             }
         }
 
@@ -92,7 +91,7 @@ public class Title {
 
                 parentUUID = pack.uuid;
 
-                if (pack.hasImageExport()) throw new InvalidArgumentException(new String[]{"UUID: " + pack.uuid + " contains image data for non data FOXML type!"});
+                if (pack.hasImageExport()) throw new IllegalArgumentException("UUID: " + pack.uuid + " contains image data for non data FOXML type!");
                 continue;
             }
 
@@ -105,7 +104,7 @@ public class Title {
                     msg = "Image";
                 }
 
-                throw new InvalidArgumentException(new String[]{"Part " + pack.uuid + " is not valid. Missing " + msg + " part."});
+                throw new IllegalArgumentException("Part " + pack.uuid + " is not valid. Missing " + msg + " part.");
             }
         }
 
@@ -136,7 +135,7 @@ public class Title {
         System.err.println("Pack " + pack.uuid + missingPart + ". Terminating.");
     }
 
-    public void processTitle(Path outRoot) throws IOException, ParserConfigurationException, SAXException, InvalidArgumentException {
+    public void processTitle(Path outRoot) throws IOException, ParserConfigurationException, SAXException, IllegalArgumentException {
 
         if (LOUD) System.out.println("Started processing title " + parentUUID);
 

@@ -1,6 +1,5 @@
 package cz.mzk.osdd.merlin;
 
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import cz.mzk.osdd.merlin.models.AppState;
 import cz.mzk.osdd.merlin.models.Title;
 import cz.mzk.osdd.merlin.models.Utils;
@@ -10,7 +9,6 @@ import javax.print.attribute.standard.Severity;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -24,28 +22,44 @@ import java.util.List;
 public class ExportProcessor {
     private static final boolean DEBUG_MODE = true;
 
-    private static final String IN = "in";
-    private static final String OUT = "out";
+    private Path IN_IMG;
+    private Path IN_FOXML;
 
-    public static final String OUTPUT_PACK_PATH = "proarcExport_" + ((new SimpleDateFormat("yyyy.MM.dd_HH:mm")).format(new Date()));
+    private Path IN_PATH;
+    private Path OUT_PATH;
+
+    private String outputPackPath = "proarcExport_" + ((new SimpleDateFormat("yyyy.MM.dd_HH:mm:ss")).format(new Date()));
     private static final boolean DETAILED_OUTPUT = true;
-
-    private final Path IN_PATH;
-    private final Path OUT_PATH;
 
     private List<Title> titles = new LinkedList<>();
 
     public ExportProcessor(String path) {
-        IN_PATH = Paths.get(path).resolve(IN);
-        OUT_PATH = Paths.get(path).resolve(OUT);
+        this(path, path);
     }
 
+    //Batch processing
     public ExportProcessor(String in, String out) {
         IN_PATH = Paths.get(in);
         OUT_PATH = Paths.get(out);
     }
 
-    public int run() {
+    //Single title processing
+    public ExportProcessor(String imageIn, String foxmlIn, String out) {
+        IN_IMG = Paths.get(imageIn);
+        IN_FOXML = Paths.get(foxmlIn);
+
+        OUT_PATH = Paths.get(out);
+        outputPackPath = out;
+
+        new File(outputPackPath).mkdir();
+    }
+
+    public int runBatch() {
+        if (IN_PATH == null || OUT_PATH == null) {
+            System.err.println("Wrong EP usage");
+            return -1;
+        }
+
         try {
             switch (checkDirectories()) {
                 case CREATED_DIRECTORIES:
@@ -57,11 +71,11 @@ public class ExportProcessor {
                     break;
             }
 
-            System.out.println("Preparing export pack into: " + OUTPUT_PACK_PATH);
+            System.out.println("Preparing export pack into: " + outputPackPath);
 
             processTitles();
 
-        } catch (InvalidArgumentException e) {
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
             return -1;
         } catch (ParserConfigurationException e) {
@@ -76,6 +90,31 @@ public class ExportProcessor {
         }
 
         return 0;
+    }
+
+    public int runSingle() {
+        if (IN_IMG == null || IN_FOXML == null || OUT_PATH == null) {
+            System.err.println("Wrong EP usage");
+            return -1;
+        }
+
+        try {
+            Utils.mergeTwoDirectories(IN_FOXML.toFile(), IN_IMG.toFile());
+
+            System.out.println("Preparing export pack into: " + outputPackPath);
+
+            processDirectory(IN_FOXML);
+            processTitles();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
+
+        return 0;
+    }
+
+    private void mergeImageAndKrameriusDirectory(Path in_img, Path in_foxml) {
+
     }
 
     private void mergeImageAndKrameriusDirectories() throws IOException {
@@ -98,7 +137,7 @@ public class ExportProcessor {
 
             Utils.mergeTwoDirectories(dirPath.toFile(), IN_PATH.resolve(subdir.getName()).toFile());
 
-            Files.delete(IN_PATH.resolve(subdir.getName()));
+            //Files.delete(IN_PATH.resolve(subdir.getName()));
         }
     }
 
@@ -109,33 +148,33 @@ public class ExportProcessor {
         return null;
     }
 
-    public void processDirectoryDebug() throws InvalidArgumentException, IllegalAccessException, IOException, SAXException, ParserConfigurationException {
+    public void processDirectoryDebug() throws IllegalArgumentException, IllegalAccessException, IOException, SAXException, ParserConfigurationException {
         if (DEBUG_MODE) processDirectory();
         else reportAccessingProtectedMethod();
     }
 
-    private void processTitles() throws ParserConfigurationException, SAXException, IOException, InvalidArgumentException {
+    private void processTitles() throws ParserConfigurationException, SAXException, IOException, IllegalArgumentException {
         for (Title title : titles) {
              title.processTitle(OUT_PATH);
         }
     }
 
-    private void processDirectory() throws InvalidArgumentException, ParserConfigurationException, SAXException, IOException {
+    private void processDirectory() throws IllegalArgumentException, ParserConfigurationException, SAXException, IOException {
         processDirectory(IN_PATH);
     }
 
-    private void processDirectory(Path directory) throws InvalidArgumentException, IOException, SAXException, ParserConfigurationException {
+    private void processDirectory(Path directory) throws IllegalArgumentException, IOException, SAXException, ParserConfigurationException {
         File[] subdirs = directory.toFile().listFiles(File::isDirectory);
         File[] files = directory.toFile().listFiles(File::isFile);
 
-        if (files.length > 0 && subdirs.length > 0) throw new InvalidArgumentException(new String[]{"Input datastructure malformed, each title must be stored in separate directory"});
+        if (files.length > 0 && subdirs.length > 0) throw new IllegalArgumentException("Input datastructure malformed, each title must be stored in separate directory");
 
         for (File subdir : subdirs) processDirectory(subdir.toPath());
 
-        if (files.length > 0) titles.add(new Title(directory, files, OUTPUT_PACK_PATH, DETAILED_OUTPUT));
+        if (files.length > 0) titles.add(new Title(directory, files, outputPackPath, DETAILED_OUTPUT));
     }
 
-    private AppState checkDirectories() throws InvalidArgumentException {
+    private AppState checkDirectories() throws IllegalArgumentException {
         boolean preparation = false;
 
         if (!IN_PATH.toFile().exists()) {
@@ -150,8 +189,8 @@ public class ExportProcessor {
 
         if (preparation) return AppState.CREATED_DIRECTORIES;
 
-        if (IN_PATH.toFile().isFile()) throw new InvalidArgumentException(new String[]{"Input directory exists as file!"});
-        if (OUT_PATH.toFile().isFile()) throw new InvalidArgumentException(new String[]{"Output directory exists as file!"});
+        if (IN_PATH.toFile().isFile()) throw new IllegalArgumentException("Input directory exists as file!");
+        if (OUT_PATH.toFile().isFile()) throw new IllegalArgumentException("Output directory exists as file!");
 
         return AppState.FINE;
     }

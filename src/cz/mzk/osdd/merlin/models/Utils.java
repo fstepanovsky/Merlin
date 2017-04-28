@@ -1,6 +1,5 @@
 package cz.mzk.osdd.merlin.models;
 
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -38,7 +37,7 @@ public class Utils {
      * @param signature
      * @return
      */
-    public static Pair<String, String> getSysnoWithBaseFromAleph(String signature) throws InvalidArgumentException {
+    public static Pair<String, String> getSysnoWithBaseFromAleph(String signature) throws IOException {
         Document doc;
         String sysno;
         String base = null;
@@ -68,7 +67,7 @@ public class Utils {
                     doc.getElementsByTagName("doc_number").getLength() < 0
                 );
 
-        if (counter == RETRY_COUNT) throw new InvalidArgumentException(new String[]{"Could not get sysno from Aleph."});
+        if (counter == RETRY_COUNT) throw new IOException("Could not get sysno from Aleph.");
 
         sysno = doc.getElementsByTagName("doc_number").item(0).getTextContent();
 
@@ -89,7 +88,17 @@ public class Utils {
 
     public static String getSignatureFromRootObject(Path directory) {
 
-        File root = directory.resolve(directory.toFile().getName() + ".xml").toFile();
+        String rootName = directory.toFile().getName();
+
+        if (rootName.startsWith("k4_")) {
+            rootName = rootName.substring(3);
+        }
+
+        if (rootName.lastIndexOf('_') != -1) {
+            rootName = rootName.substring(0, rootName.lastIndexOf('_'));
+        }
+
+        File root = directory.resolve(rootName + ".xml").toFile();
 
         Document doc = null;
 
@@ -133,7 +142,7 @@ public class Utils {
         return null;
     }
 
-    private static Document getResponseFromAleph(String signature, int retryCount) throws InvalidArgumentException {
+    private static Document getResponseFromAleph(String signature, int retryCount) throws IOException {
         Document doc;
 
         for (int i = 0; i < ALEPH_BASES.length; i++) {
@@ -142,7 +151,7 @@ public class Utils {
             if (doc != null) return doc;
         }
 
-        throw new InvalidArgumentException(new String[]{"Could not get record from Aleph"});
+        throw new IOException("Could not get record from Aleph");
     }
 
     private static Document getResponseFromAleph(String base, String signature,  int retryCount) {

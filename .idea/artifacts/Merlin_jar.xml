@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Merlin:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Merlin_jar</output-path>
+    <root id="archive" name="Merlin.jar">
+      <element id="module-output" name="Merlin" />
+    </root>
+  </artifact>
+</component>
