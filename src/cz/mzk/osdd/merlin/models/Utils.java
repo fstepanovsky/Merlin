@@ -1,17 +1,16 @@
 package cz.mzk.osdd.merlin.models;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * Created by Jakub Kremlacek on 4.4.17.
@@ -43,6 +42,10 @@ public class Utils {
         String base = null;
 
         if (signature == null) return null;
+
+        if (signature.contains(" ")) {
+            signature  = signature.replaceAll(" ", "%20");
+        }
 
         int counter = 0;
 
