@@ -3,10 +3,6 @@ package cz.mzk.osdd.merlin;
 import cz.mzk.osdd.merlin.models.AppState;
 import cz.mzk.osdd.merlin.models.Title;
 import cz.mzk.osdd.merlin.models.Utils;
-import org.xml.sax.SAXException;
-
-import javax.print.attribute.standard.Severity;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -15,6 +11,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import javax.print.attribute.standard.Severity;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
 
 /**
  * Created by Jakub Kremlacek on 30.3.17.
@@ -22,11 +21,17 @@ import java.util.List;
 public class ExportProcessor {
     private static final boolean DEBUG_MODE = true;
 
+    //TODO: set paths in proarc.cfg
+    private final Path IMAGESERVER_PATH;
+    private final Path KRAMERIUS_PATH;
+
     private Path IN_IMG;
     private Path IN_FOXML;
 
     private Path IN_PATH;
     private Path OUT_PATH;
+
+    private final boolean DIRECT_OUTPUT;
 
     private String outputPackPath = "proarcExport_" + ((new SimpleDateFormat("yyyy.MM.dd_HH:mm:ss")).format(new Date()));
     private static final boolean DETAILED_OUTPUT = true;
@@ -41,6 +46,11 @@ public class ExportProcessor {
     public ExportProcessor(String in, String out) {
         IN_PATH = Paths.get(in);
         OUT_PATH = Paths.get(out);
+
+        DIRECT_OUTPUT = false;
+
+        IMAGESERVER_PATH = null;
+        KRAMERIUS_PATH = null;
     }
 
     //Single title processing
@@ -48,10 +58,33 @@ public class ExportProcessor {
         IN_IMG = Paths.get(imageIn);
         IN_FOXML = Paths.get(foxmlIn);
 
+        DIRECT_OUTPUT = false;
+
+        IMAGESERVER_PATH = null;
+        KRAMERIUS_PATH = null;
+
         OUT_PATH = Paths.get(out);
         outputPackPath = out;
 
         new File(outputPackPath).mkdir();
+    }
+
+    public ExportProcessor(String imageIn, String foxmlIn, boolean directOutput, String imageserverPath, String krameriusPath) {
+        IN_IMG = Paths.get(imageIn);
+        IN_FOXML = Paths.get(foxmlIn);
+
+        IMAGESERVER_PATH = new File(imageserverPath).toPath();
+        KRAMERIUS_PATH = new File(krameriusPath).toPath();
+
+        DIRECT_OUTPUT = directOutput;
+
+        if (!IMAGESERVER_PATH.toFile().exists()) {
+            throw new IllegalArgumentException("Invalid Imageserver path!");
+        }
+
+        if (!KRAMERIUS_PATH.toFile().exists()) {
+            throw new IllegalArgumentException("Invalid Kramerius path!");
+        }
     }
 
     public int runBatch() {
@@ -73,7 +106,10 @@ public class ExportProcessor {
 
             System.out.println("Preparing export pack into: " + outputPackPath);
 
-            processTitles();
+            processTitles(
+                    DIRECT_OUTPUT ? KRAMERIUS_PATH : null,
+                    DIRECT_OUTPUT ? IMAGESERVER_PATH : null
+            );
 
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
@@ -93,7 +129,7 @@ public class ExportProcessor {
     }
 
     public int runSingle() {
-        if (IN_IMG == null || IN_FOXML == null || OUT_PATH == null) {
+        if (IN_IMG == null || IN_FOXML == null || (OUT_PATH == null && !DIRECT_OUTPUT)) {
             System.err.println("Wrong EP usage");
             return -1;
         }
@@ -101,10 +137,13 @@ public class ExportProcessor {
         try {
             Utils.mergeTwoDirectories(IN_FOXML.toFile(), IN_IMG.toFile());
 
-            System.out.println("Preparing export pack into: " + outputPackPath);
+            //System.out.println("Preparing export pack into: " + outputPackPath);
 
             processDirectory(IN_FOXML);
-            processTitles();
+            processTitles(
+                    DIRECT_OUTPUT ? KRAMERIUS_PATH : null,
+                    DIRECT_OUTPUT ? IMAGESERVER_PATH : null
+                    );
         } catch (Exception e) {
             e.printStackTrace();
             return -1;
@@ -153,9 +192,9 @@ public class ExportProcessor {
         else reportAccessingProtectedMethod();
     }
 
-    private void processTitles() throws ParserConfigurationException, SAXException, IOException, IllegalArgumentException {
+    private void processTitles(Path krameriusPath, Path imageserverPath) throws ParserConfigurationException, SAXException, IOException, IllegalArgumentException {
         for (Title title : titles) {
-             title.processTitle(OUT_PATH);
+             title.processTitle(OUT_PATH, krameriusPath, imageserverPath);
         }
     }
 

@@ -15,7 +15,11 @@ public class Main {
     public static final String defaultPath = "";
     public static final String INPUT_IMAGE = "-iI";
     public static final String INPUT_K4 = "-iK";
+
     public static final String OUTPUT = "-o";
+    public static final String DIRECT_OUTPUT = "-oD";
+    public static final String OUTPUT_KRAMERIUS = "-oK";
+    public static final String OUTPUT_IMAGESERVER = "-oI";
 
     public static void main(String[] args) {
         ExportProcessor processor = null;
@@ -34,13 +38,16 @@ public class Main {
     }
 
     public static ExportProcessor processCommandLine(String[] args) {
-        if (args.length != 6) throw new IllegalArgumentException("Invalid argument count: " + args.length + " expected 6.");
+        if (args.length != 9 && args.length != 6) throw new IllegalArgumentException("Invalid argument count: " + args.length + " expected 9 or 6.");
 
         int pos = 0;
 
         File inputImage = null;
         File inputK4 = null;
         File output = null;
+        File krameriusPath = null;
+        File imageserverPath = null;
+        boolean directOutput = false;
 
         while (pos < args.length) {
             if (args[pos].equals(INPUT_IMAGE)) {
@@ -59,6 +66,22 @@ public class Main {
                 output = new File(args[pos+1]);
 
                 pos = pos + 2;
+            } else if (args[pos].equals(DIRECT_OUTPUT)) {
+                directOutput = true;
+
+                pos = pos + 1;
+            } else if (args[pos].equals(OUTPUT_IMAGESERVER)) {
+                imageserverPath = new File(args[pos+1]);
+
+                if (!imageserverPath.exists() || imageserverPath.isFile()) throw new IllegalArgumentException("Imageserver directory does not exist.");
+
+                pos = pos + 2;
+            } else if (args[pos].equals(OUTPUT_KRAMERIUS)) {
+                krameriusPath = new File(args[pos+1]);
+
+                if (!krameriusPath.exists() || krameriusPath.isFile()) throw new IllegalArgumentException("Kramerius directory does not exist.");
+
+                pos = pos + 2;
             } else {
                 throw new IllegalArgumentException("Invalid argument type: " + args[pos]);
             }
@@ -66,8 +89,10 @@ public class Main {
 
         if (inputImage == null) throw new IllegalArgumentException("inputImage not set");
         if (inputK4 == null) throw new IllegalArgumentException("inputK4 not set");
-        if (output == null) throw new IllegalArgumentException("output not set");
+        if (output == null && !directOutput) throw new IllegalArgumentException("output not set, use: " + OUTPUT + " or " + DIRECT_OUTPUT);
 
-        return new ExportProcessor(inputImage.getAbsolutePath(), inputK4.getAbsolutePath(), output.getAbsolutePath());
+        return directOutput ?
+                new ExportProcessor(inputImage.getAbsolutePath(), inputK4.getAbsolutePath(), directOutput, imageserverPath.getAbsolutePath(), krameriusPath.getAbsolutePath()) :
+                new ExportProcessor(inputImage.getAbsolutePath(), inputK4.getAbsolutePath(), output.getAbsolutePath());
     }
 }
