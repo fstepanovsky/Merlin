@@ -21,7 +21,6 @@ import org.xml.sax.SAXException;
 public class ExportProcessor {
     private static final boolean DEBUG_MODE = true;
 
-    //TODO: set paths in proarc.cfg
     private final Path IMAGESERVER_PATH;
     private final Path KRAMERIUS_PATH;
 
