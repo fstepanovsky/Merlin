@@ -15,6 +15,9 @@ public class Main {
     public static final String defaultPath = "";
     public static final String INPUT_IMAGE = "-iI";
     public static final String INPUT_K4 = "-iK";
+    public static final String K4_CREDENTIALS = "-kL";
+    public static final String K4_ADDRESS = "-kA";
+    public static final String ALEPH_DIR = "-aD";
 
     public static final String OUTPUT = "-o";
     public static final String DIRECT_OUTPUT = "-oD";
@@ -38,8 +41,6 @@ public class Main {
     }
 
     public static ExportProcessor processCommandLine(String[] args) {
-        if (args.length != 9 && args.length != 6) throw new IllegalArgumentException("Invalid argument count: " + args.length + " expected 9 or 6.");
-
         int pos = 0;
 
         File inputImage = null;
@@ -48,6 +49,9 @@ public class Main {
         File krameriusPath = null;
         File imageserverPath = null;
         boolean directOutput = false;
+        String krameriusAddress = null;
+        String krameriusCredentials = null;
+        File alephDir = null;
 
         while (pos < args.length) {
             if (args[pos].equals(INPUT_IMAGE)) {
@@ -77,9 +81,22 @@ public class Main {
 
                 pos = pos + 2;
             } else if (args[pos].equals(OUTPUT_KRAMERIUS)) {
-                krameriusPath = new File(args[pos+1]);
+                krameriusPath = new File(args[pos + 1]);
 
-                if (!krameriusPath.exists() || krameriusPath.isFile()) throw new IllegalArgumentException("Kramerius directory does not exist.");
+                if (!krameriusPath.exists() || krameriusPath.isFile())
+                    throw new IllegalArgumentException("Kramerius directory does not exist.");
+
+                pos = pos + 2;
+            } else if (args[pos].equals(K4_ADDRESS)) {
+                krameriusAddress = args[pos + 1];
+
+                pos = pos + 2;
+            } else if (args[pos].equals(K4_CREDENTIALS)) {
+                krameriusCredentials = args[pos + 1];
+
+                pos = pos + 2;
+            } else if (args[pos].equals(ALEPH_DIR)) {
+                alephDir = new File(args[pos + 1]);
 
                 pos = pos + 2;
             } else {
@@ -91,8 +108,42 @@ public class Main {
         if (inputK4 == null) throw new IllegalArgumentException("inputK4 not set");
         if (output == null && !directOutput) throw new IllegalArgumentException("output not set, use: " + OUTPUT + " or " + DIRECT_OUTPUT);
 
-        return directOutput ?
-                new ExportProcessor(inputImage.getAbsolutePath(), inputK4.getAbsolutePath(), directOutput, imageserverPath.getAbsolutePath(), krameriusPath.getAbsolutePath()) :
-                new ExportProcessor(inputImage.getAbsolutePath(), inputK4.getAbsolutePath(), output.getAbsolutePath());
+        if (alephDir != null && (!alephDir.exists() || !alephDir.isDirectory())) {
+            throw new IllegalArgumentException("aleph directory: " + alephDir + " must exist");
+        }
+
+        //note that unused input attributes are simply discarded
+
+        if (directOutput) {
+            if (krameriusCredentials != null && !krameriusCredentials.contains(":")) {
+                throw new IllegalArgumentException("krameriusCredentials must be set correctly");
+            }
+
+            if (
+                    krameriusAddress != null && krameriusCredentials == null ||
+                    krameriusAddress == null && krameriusCredentials != null
+            ) {
+                throw new IllegalArgumentException("krameriusAddress and krameriusCredentials must be set when remote import call is used");
+            }
+
+            if (alephDir != null && (!alephDir.exists() || !alephDir.isDirectory())) {
+                throw new IllegalArgumentException("aleph directory: " + alephDir + " must exist");
+            }
+
+            return new ExportProcessor(
+                    inputImage.getAbsolutePath(),
+                    inputK4.getAbsolutePath(),
+                    directOutput,
+                    imageserverPath.getAbsolutePath(),
+                    krameriusPath.getAbsolutePath(),
+                    krameriusAddress,
+                    krameriusCredentials,
+                    alephDir);
+        } else {
+            if (output == null) throw new IllegalArgumentException("output not set, use: " + OUTPUT + " or " + DIRECT_OUTPUT);
+            return new ExportProcessor(inputImage.getAbsolutePath(), inputK4.getAbsolutePath(), output.getAbsolutePath(), alephDir);
+        }
+
+
     }
 }

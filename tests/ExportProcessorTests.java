@@ -1,10 +1,8 @@
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import cz.mzk.osdd.merlin.ExportProcessor;
 import cz.mzk.osdd.merlin.models.ExportPack;
-import org.junit.jupiter.api.Test;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -57,14 +55,5 @@ public class ExportProcessorTests {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-    }
-
-    @Test
-    public void processPacksValidateInputInvalidInputCountTest() {
-        String inputPath = "./tests/input/validateInput/incomplete";
-
-        ExportProcessor processor = new ExportProcessor(inputPath);
-
-        assertThrows(InvalidArgumentException.class, () -> processor.processDirectoryDebug());
     }
 }

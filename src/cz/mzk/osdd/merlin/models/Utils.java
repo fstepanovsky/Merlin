@@ -1,16 +1,26 @@
 package cz.mzk.osdd.merlin.models;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Base64;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 
 /**
  * Created by Jakub Kremlacek on 4.4.17.
@@ -188,5 +198,78 @@ public class Utils {
             file.renameTo(new File(targetDirPath+File.separator+file.getName()));
             System.out.println(file.getName() + " is moved!");
         }
+    }
+
+    public static void requestKrameriusImport(String parentUUID, String k4address, String k4credentials) throws IOException {
+        String query = k4address + "/search/api/v4.6/processes/?def=parametrizedimport";
+        String json =
+                "{" +
+                        "\"mapping\":" +
+                        "{" +
+                        "\"importDirectory\":\"/opt/app-root/src/.kramerius4/import/kramerius/ProArc/" + parentUUID + "\","+
+                        "\"startIndexer\":\"true\"," +
+                        "\"updateExisting\":\"false\"" +
+                        "}" +
+                        "}";
+
+        URL url = new URL(query);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(5000);
+        String encoded = Base64.getEncoder().encodeToString((k4credentials).getBytes(StandardCharsets.UTF_8));
+        conn.setRequestProperty("Authorization", "Basic "+encoded);
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setDoOutput(true);
+        conn.setDoInput(true);
+        conn.setRequestMethod("POST");
+
+        OutputStream os = conn.getOutputStream();
+        os.write(json.getBytes("UTF-8"));
+        os.close();
+
+        int status = conn.getResponseCode();
+        InputStream in;
+
+        if (status < HTTP_BAD_REQUEST) {
+            // read the response
+            in = new BufferedInputStream(conn.getInputStream());
+            String result = org.apache.commons.io.IOUtils.toString(in, "UTF-8");
+            System.out.println("Kramerius response:");
+            System.out.println(result);
+
+            in.close();
+            conn.disconnect();
+        } else {
+            // read the response
+            in = new BufferedInputStream(conn.getErrorStream());
+            String result = org.apache.commons.io.IOUtils.toString(in, "UTF-8");
+
+            in.close();
+            conn.disconnect();
+
+            throw new IllegalArgumentException("Requesting Kramerius import failed, server response was : " + result);
+        }
+
+        String result = org.apache.commons.io.IOUtils.toString(in, "UTF-8");
+        System.out.println("Kramerius response:");
+        System.out.println(result);
+
+        in.close();
+        conn.disconnect();
+
+        return;
+    }
+
+    public static void prepareAlephUpdateRecord(String parentUUID, String sysno, String base, File alephDirectory) throws IOException {
+
+        File csvFile = alephDirectory.toPath().resolve(parentUUID + ".csv").toFile();
+
+        FileUtils.writeStringToFile(
+                csvFile,
+                base + " @ " + sysno + " @ http://www.digitalniknihovna.cz/mzk/view/uuid:" + parentUUID,
+                Charset.defaultCharset()
+        );
+
+        csvFile.setReadable(true, false);
+        csvFile.setWritable(true, false);
     }
 }

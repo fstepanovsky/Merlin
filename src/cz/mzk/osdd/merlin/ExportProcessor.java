@@ -24,6 +24,10 @@ public class ExportProcessor {
     private final Path IMAGESERVER_PATH;
     private final Path KRAMERIUS_PATH;
 
+    private final String KRAMERIUS_ADDRESS;
+    private final String KRAMERIUS_CREDENTIALS;
+    private final File ALEPH_DIRECTORY;
+
     private Path IN_IMG;
     private Path IN_FOXML;
 
@@ -41,7 +45,7 @@ public class ExportProcessor {
         this(path, path);
     }
 
-    //Batch processing
+    //Batch processing - with direct output
     public ExportProcessor(String in, String out) {
         IN_PATH = Paths.get(in);
         OUT_PATH = Paths.get(out);
@@ -50,10 +54,13 @@ public class ExportProcessor {
 
         IMAGESERVER_PATH = null;
         KRAMERIUS_PATH = null;
+        KRAMERIUS_CREDENTIALS = null;
+        KRAMERIUS_ADDRESS = null;
+        ALEPH_DIRECTORY = null;
     }
 
-    //Single title processing
-    public ExportProcessor(String imageIn, String foxmlIn, String out) {
+    //Single title processing - with direct output
+    public ExportProcessor(String imageIn, String foxmlIn, String out, File alephDir) {
         IN_IMG = Paths.get(imageIn);
         IN_FOXML = Paths.get(foxmlIn);
 
@@ -61,6 +68,9 @@ public class ExportProcessor {
 
         IMAGESERVER_PATH = null;
         KRAMERIUS_PATH = null;
+        KRAMERIUS_CREDENTIALS = null;
+        KRAMERIUS_ADDRESS = null;
+        ALEPH_DIRECTORY = alephDir;
 
         OUT_PATH = Paths.get(out);
         outputPackPath = out;
@@ -68,7 +78,16 @@ public class ExportProcessor {
         new File(outputPackPath).mkdir();
     }
 
-    public ExportProcessor(String imageIn, String foxmlIn, boolean directOutput, String imageserverPath, String krameriusPath) {
+    //Single title processing - with remote output
+    public ExportProcessor(
+            String imageIn,
+            String foxmlIn,
+            boolean directOutput,
+            String imageserverPath,
+            String krameriusPath,
+            String krameriusAddress,
+            String krameriusCredentials,
+            File alephDir) {
         IN_IMG = Paths.get(imageIn);
         IN_FOXML = Paths.get(foxmlIn);
 
@@ -84,6 +103,10 @@ public class ExportProcessor {
         if (!KRAMERIUS_PATH.toFile().exists()) {
             throw new IllegalArgumentException("Invalid Kramerius path!");
         }
+
+        KRAMERIUS_ADDRESS = krameriusAddress;
+        KRAMERIUS_CREDENTIALS = krameriusCredentials;
+        ALEPH_DIRECTORY = alephDir;
     }
 
     public int runBatch() {
@@ -136,8 +159,6 @@ public class ExportProcessor {
         try {
             Utils.mergeTwoDirectories(IN_FOXML.toFile(), IN_IMG.toFile());
 
-            //System.out.println("Preparing export pack into: " + outputPackPath);
-
             processDirectory(IN_FOXML);
             processTitles(
                     DIRECT_OUTPUT ? KRAMERIUS_PATH : null,
@@ -145,14 +166,10 @@ public class ExportProcessor {
                     );
         } catch (Exception e) {
             e.printStackTrace();
-            return -1;
+            return 1;
         }
 
         return 0;
-    }
-
-    private void mergeImageAndKrameriusDirectory(Path in_img, Path in_foxml) {
-
     }
 
     private void mergeImageAndKrameriusDirectories() throws IOException {
@@ -174,8 +191,6 @@ public class ExportProcessor {
             if (!dirPath.toFile().exists()) dirPath.toFile().mkdir();
 
             Utils.mergeTwoDirectories(dirPath.toFile(), IN_PATH.resolve(subdir.getName()).toFile());
-
-            //Files.delete(IN_PATH.resolve(subdir.getName()));
         }
     }
 
@@ -193,7 +208,7 @@ public class ExportProcessor {
 
     private void processTitles(Path krameriusPath, Path imageserverPath) throws ParserConfigurationException, SAXException, IOException, IllegalArgumentException {
         for (Title title : titles) {
-             title.processTitle(OUT_PATH, krameriusPath, imageserverPath);
+            title.processTitle(OUT_PATH, krameriusPath, imageserverPath, ALEPH_DIRECTORY, KRAMERIUS_CREDENTIALS, KRAMERIUS_ADDRESS);
         }
     }
 
