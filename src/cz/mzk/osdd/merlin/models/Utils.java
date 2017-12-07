@@ -206,7 +206,7 @@ public class Utils {
                 "{" +
                         "\"mapping\":" +
                         "{" +
-                        "\"importDirectory\":\"/opt/app-root/src/.kramerius4/import/kramerius/ProArc/" + parentUUID + "\","+
+                        "\"importDirectory\":\"/opt/app-root/src/.kramerius4/import/ProArc/" + parentUUID + "\","+
                         "\"startIndexer\":\"true\"," +
                         "\"updateExisting\":\"false\"" +
                         "}" +
@@ -249,9 +249,13 @@ public class Utils {
             throw new IllegalArgumentException("Requesting Kramerius import failed, server response was : " + result);
         }
 
-        String result = org.apache.commons.io.IOUtils.toString(in, "UTF-8");
-        System.out.println("Kramerius response:");
-        System.out.println(result);
+        try {
+            String result = org.apache.commons.io.IOUtils.toString(in, "UTF-8");
+            System.out.println("Kramerius response:");
+            System.out.println(result);
+        } catch (Exception e) {
+
+        }
 
         in.close();
         conn.disconnect();

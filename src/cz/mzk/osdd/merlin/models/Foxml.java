@@ -1,15 +1,15 @@
 package cz.mzk.osdd.merlin.models;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
+import java.io.File;
+import java.nio.file.Path;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.nio.file.Path;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  * Wrapper for Fedora document XML, simplifies fixing datastream content locations
@@ -183,6 +183,10 @@ public class Foxml {
     }
 
     public void save(Path toKramerius) throws TransformerException {
+        File krameriusFoxml = toKramerius.resolve(uuid + ".xml").toFile();
+
+        krameriusFoxml.setWritable(true, false);
+
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
         DOMSource source = new DOMSource(doc);

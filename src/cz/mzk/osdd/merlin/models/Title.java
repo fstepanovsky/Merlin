@@ -5,10 +5,15 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -24,6 +29,9 @@ public class Title {
 
     private static final String FILE_K4_SUFFIX = ".xml";
     private static final String FILE_IMAGE_SUFFIX = ".NDK_USER";
+
+    private static final String IMAGESERVER_REQUIRED_DIR_PERMS = "rwxrwxr-x";
+    private static final String IMAGESERVER_REQUIRED_FILE_PERMS = "rwxr-xr--";
 
     public final String OUTPUT_PACK_PATH;
     public final boolean LOUD;
@@ -176,13 +184,37 @@ public class Title {
 
         if (!outFoxml.toFile().exists()) outFoxml.toFile().mkdirs();
 
+        checkPermissions(outFoxml, true, true, true);
+
         Path imsDirectory =
                 (outImageserver == null ?
                         outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
                         outImageserver
                 ).resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
 
-        if (!imsDirectory.toFile().exists()) imsDirectory.toFile().mkdirs();
+        if (!imsDirectory.toFile().exists()) {
+            Files.createDirectories(
+                    imsDirectory,
+                    PosixFilePermissions.asFileAttribute(
+                            PosixFilePermissions.fromString(
+                                    IMAGESERVER_REQUIRED_DIR_PERMS
+                            )));
+
+            //createDirectories is not trustworthy under docker
+            Path subPath = (outImageserver == null ?
+                    outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
+                    outImageserver
+            );
+
+            subPath = subPath.resolve(base);
+            checkPermissions(subPath, true, true, false);
+            subPath = subPath.resolve(sysno.substring(0, 3));
+            checkPermissions(subPath, true, true, false);
+            subPath = subPath.resolve(sysno.substring(3, 6));
+            checkPermissions(subPath, true, true, false);
+            subPath = subPath.resolve(sysno.substring(6, sysno.length()));
+            checkPermissions(subPath, true, true, false);
+        }
 
         for (ExportPack pack : packs.values()) {
 
@@ -207,16 +239,27 @@ public class Title {
 
             try {
                 Files.copy(pack.getImageExportPath(), imagePath);
+                Files.setPosixFilePermissions(
+                        imagePath,
+                        PosixFilePermissions.fromString(
+                                IMAGESERVER_REQUIRED_FILE_PERMS
+                        ));
+                checkPermissions(imagePath, false, false, false);
+
             } catch (FileAlreadyExistsException e) {
-                System.out.println("Warning: Image already exists at target destination: " + pack.getImageExportPath() + " Skipping.");
+                System.out.println("Warning: Image: " + imagePath.getFileName() + " already exists at target destination: " + pack.getImageExportPath() + " Skipping.");
             }
         }
 
         for (String foxml : notModifiedFOXMLs) {
             try {
-                Files.copy(location.resolve(foxml + ".xml"), outFoxml.resolve(foxml + ".xml"));
+                Path targetPath = outFoxml.resolve(foxml + ".xml");
+
+                Files.copy(location.resolve(foxml + ".xml"), targetPath);
+
+                checkPermissions(targetPath, true, true, true);
             } catch (FileAlreadyExistsException e) {
-                System.out.println("Warning: File already exists. Skipping!");
+                System.out.println("Warning: File: " + foxml + ".xml already exists. Skipping!");
             }
         }
 
@@ -229,6 +272,34 @@ public class Title {
         }
 
         if (LOUD) System.out.println("Title " + parentUUID + " processed.");
+    }
+
+    private void checkPermissions(Path path, boolean groupWrite, boolean othersExecute, boolean othersWrite) throws IOException {
+        checkPermission(path, PosixFilePermission.GROUP_EXECUTE);
+        if (groupWrite) {
+            checkPermission(path, PosixFilePermission.GROUP_WRITE);
+        }
+        checkPermission(path, PosixFilePermission.OTHERS_READ);
+        if (othersExecute) {
+            checkPermission(path, PosixFilePermission.OTHERS_EXECUTE);
+        }
+
+    }
+
+    private void checkPermission(Path path, PosixFilePermission perm) throws IOException {
+        PosixFileAttributes attrs = Files.getFileAttributeView(path, PosixFileAttributeView.class).readAttributes();
+
+        if (!attrs.permissions().contains(perm)) {
+            Set<PosixFilePermission> perms = attrs.permissions();
+            perms.add(perm);
+            Files.setPosixFilePermissions(path, perms);
+
+            attrs = Files.getFileAttributeView(path, PosixFileAttributeView.class).readAttributes();
+
+            if (!attrs.permissions().contains(perm)) {
+                throw new IllegalArgumentException("Unable to set group write permission");
+            }
+        }
     }
 }
 
