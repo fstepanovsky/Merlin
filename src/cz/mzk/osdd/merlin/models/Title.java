@@ -105,13 +105,7 @@ public class Title {
             }
 
             if (!pack.hasImageExport() || !pack.hasKrameriusExport()) {
-                String msg;
-
-                if (!pack.hasKrameriusExport()) {
-                    msg = "FOXML";
-                } else {
-                    msg = "Image";
-                }
+                String msg = !pack.hasKrameriusExport() ? "FOXML" : "Image";
 
                 throw new IllegalArgumentException("Part " + pack.uuid + " is not valid. Missing " + msg + " part.");
             }
@@ -193,27 +187,7 @@ public class Title {
                 ).resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
 
         if (!imsDirectory.toFile().exists()) {
-            Files.createDirectories(
-                    imsDirectory,
-                    PosixFilePermissions.asFileAttribute(
-                            PosixFilePermissions.fromString(
-                                    IMAGESERVER_REQUIRED_DIR_PERMS
-                            )));
-
-            //createDirectories is not trustworthy under docker
-            Path subPath = (outImageserver == null ?
-                    outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
-                    outImageserver
-            );
-
-            subPath = subPath.resolve(base);
-            checkPermissions(subPath, true, true, false);
-            subPath = subPath.resolve(sysno.substring(0, 3));
-            checkPermissions(subPath, true, true, false);
-            subPath = subPath.resolve(sysno.substring(3, 6));
-            checkPermissions(subPath, true, true, false);
-            subPath = subPath.resolve(sysno.substring(6, sysno.length()));
-            checkPermissions(subPath, true, true, false);
+            createImageserverPath(outRoot, outImageserver, imsDirectory);
         }
 
         for (ExportPack pack : packs.values()) {
@@ -272,6 +246,30 @@ public class Title {
         }
 
         if (LOUD) System.out.println("Title " + parentUUID + " processed.");
+    }
+
+    private void createImageserverPath(Path outRoot, Path outImageserver, Path imsDirectory) throws IOException {
+        Files.createDirectories(
+                imsDirectory,
+                PosixFilePermissions.asFileAttribute(
+                        PosixFilePermissions.fromString(
+                                IMAGESERVER_REQUIRED_DIR_PERMS
+                        )));
+
+        //createDirectories is not trustworthy under docker
+        Path subPath = (outImageserver == null ?
+                outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
+                outImageserver
+        );
+
+        subPath = subPath.resolve(base);
+        checkPermissions(subPath, true, true, false);
+        subPath = subPath.resolve(sysno.substring(0, 3));
+        checkPermissions(subPath, true, true, false);
+        subPath = subPath.resolve(sysno.substring(3, 6));
+        checkPermissions(subPath, true, true, false);
+        subPath = subPath.resolve(sysno.substring(6, sysno.length()));
+        checkPermissions(subPath, true, true, false);
     }
 
     private void checkPermissions(Path path, boolean groupWrite, boolean othersExecute, boolean othersWrite) throws IOException {

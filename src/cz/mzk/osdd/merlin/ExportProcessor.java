@@ -109,6 +109,28 @@ public class ExportProcessor {
         ALEPH_DIRECTORY = alephDir;
     }
 
+    public static ExportProcessor createExportProcessor(AppConfig config) {
+        if (config.isDirectOutput()) {
+            return new ExportProcessor(
+                    config.getInputImage().getAbsolutePath(),
+                    config.getInputK4().getAbsolutePath(),
+                    config.isDirectOutput(),
+                    config.getImageserverPath().getAbsolutePath(),
+                    config.getKrameriusPath().getAbsolutePath(),
+                    config.getKrameriusAddress(),
+                    config.getKrameriusCredentials(),
+                    config.getAlephDir()
+            );
+        } else {
+            return new ExportProcessor(
+                    config.getInputImage().getAbsolutePath(),
+                    config.getInputK4().getAbsolutePath(),
+                    config.getOutput().getAbsolutePath(),
+                    config.getAlephDir()
+            );
+        }
+    }
+
     public int runBatch() {
         if (IN_PATH == null || OUT_PATH == null) {
             System.err.println("Wrong EP usage");
