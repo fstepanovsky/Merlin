@@ -3,6 +3,9 @@ package cz.mzk.osdd.merlin;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Properties;
 
 /**
@@ -26,60 +29,89 @@ public class AppConfig {
     }
 
     private void processArgs(String[] args) {
+
+        if (args == null) {
+            throw new NullPointerException("Args cannot be null");
+        }
+
         int pos = 0;
 
         while (pos < args.length) {
-            if (args[pos].equals(CMDAttribute.INPUT_IMAGE)) {
-                inputImage = new File(args[pos+1]);
 
-                if (!inputImage.exists() || inputImage.isFile()) throw new IllegalArgumentException("Input image directory does not exist.");
+            switch (args[pos]) {
+                case CMDAttribute.INPUT_IMAGE:
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.INPUT_K4)) {
-                inputK4 = new File(args[pos+1]);
+                    inputImage = new File(args[pos+1]);
 
-                if (!inputK4.exists() || inputK4.isFile()) throw new IllegalArgumentException("Input image directory does not exist.");
+                    if (!inputImage.exists() || inputImage.isFile()) throw new IllegalArgumentException("Input image directory does not exist.");
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.OUTPUT)) {
-                output = new File(args[pos+1]);
+                    pos = pos + 2;
+                    break;
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.DIRECT_OUTPUT)) {
-                directOutput = true;
+                case CMDAttribute.INPUT_K4:
 
-                pos = pos + 1;
-            } else if (args[pos].equals(CMDAttribute.OUTPUT_IMAGESERVER)) {
-                imageserverPath = new File(args[pos+1]);
+                    inputK4 = new File(args[pos+1]);
 
-                if (!imageserverPath.exists() || imageserverPath.isFile()) throw new IllegalArgumentException("Imageserver directory does not exist.");
+                    if (!inputK4.exists() || inputK4.isFile()) throw new IllegalArgumentException("Input image directory does not exist.");
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.OUTPUT_KRAMERIUS)) {
-                krameriusPath = new File(args[pos + 1]);
+                    pos = pos + 2;
+                    break;
 
-                if (!krameriusPath.exists() || krameriusPath.isFile())
-                    throw new IllegalArgumentException("Kramerius directory does not exist.");
+                case CMDAttribute.OUTPUT:
+                    output = new File(args[pos+1]);
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.K4_ADDRESS)) {
-                krameriusAddress = args[pos + 1];
+                    pos = pos + 2;
+                    break;
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.K4_CREDENTIALS)) {
-                krameriusCredentials = args[pos + 1];
+                case CMDAttribute.DIRECT_OUTPUT:
+                    directOutput = true;
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.ALEPH_DIR)) {
-                alephDir = new File(args[pos + 1]);
+                    pos = pos + 1;
+                    break;
 
-                pos = pos + 2;
-            } else if (args[pos].equals(CMDAttribute.CONFIG)) {
-                configFile = new File(args[pos + 1]);
+                case CMDAttribute.OUTPUT_IMAGESERVER:
+                    imageserverPath = new File(args[pos+1]);
 
-                pos = pos + 2;
-            } else {
-                throw new IllegalArgumentException("Invalid argument type: " + args[pos]);
+                    if (!imageserverPath.exists() || imageserverPath.isFile()) throw new IllegalArgumentException("Imageserver directory does not exist.");
+
+                    pos = pos + 2;
+                    break;
+
+                case CMDAttribute.OUTPUT_KRAMERIUS:
+                    krameriusPath = new File(args[pos + 1]);
+
+                    if (!krameriusPath.exists() || krameriusPath.isFile())
+                        throw new IllegalArgumentException("Kramerius directory does not exist.");
+
+                    pos = pos + 2;
+                    break;
+
+                case CMDAttribute.K4_ADDRESS:
+                    krameriusAddress = args[pos + 1];
+
+                    pos = pos + 2;
+                    break;
+
+                case CMDAttribute.K4_CREDENTIALS:
+                    krameriusCredentials = args[pos + 1];
+
+                    pos = pos + 2;
+                    break;
+
+                case CMDAttribute.ALEPH_DIR:
+                    alephDir = new File(args[pos + 1]);
+
+                    pos = pos + 2;
+                    break;
+
+                case CMDAttribute.CONFIG:
+                    configFile = new File(args[pos + 1]);
+
+                    pos = pos + 2;
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Invalid argument type: " + args[pos]);
             }
         }
 
@@ -106,15 +138,32 @@ public class AppConfig {
                 throw new IllegalArgumentException("krameriusCredentials must be set correctly");
             }
 
-            if (
-                    krameriusAddress != null && krameriusCredentials == null ||
-                            krameriusAddress == null && krameriusCredentials != null
-                    ) {
+            if (krameriusAddress != null && krameriusCredentials == null || krameriusAddress == null && krameriusCredentials != null) {
                 throw new IllegalArgumentException("krameriusAddress and krameriusCredentials must be set when remote import call is used");
+            }
+
+            if (krameriusAddress != null) {
+                try {
+                    URL url = new URL(krameriusAddress);
+                    URLConnection conn = url.openConnection();
+                    conn.connect();
+                } catch (MalformedURLException e) {
+                    throw new IllegalArgumentException("malformed kramerius URL");
+                } catch (IOException e) {
+                    throw new IllegalArgumentException("connection to the kramerius cannot be established");
+                }
             }
 
             if (alephDir != null && (!alephDir.exists() || !alephDir.isDirectory())) {
                 throw new IllegalArgumentException("aleph directory: " + alephDir + " must exist");
+            }
+
+            if (krameriusPath == null) {
+                throw new IllegalArgumentException("path to kramerius must be specified");
+            }
+
+            if (imageserverPath == null) {
+                throw new IllegalArgumentException("path to imageserver must be specified");
             }
 
         } else {
