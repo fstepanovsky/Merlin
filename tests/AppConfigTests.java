@@ -26,13 +26,15 @@ public class AppConfigTests {
 
     @Test
     public void initTest() {
-        String[] args = {"-iI", "./", "-iK", "tests", "-oD"};
+        String[] args = {"-iI", "./", "-iK", "tests", "-oD", "-oK", "tests/input", "-oI", "tests/input/foxml"};
 
         AppConfig ac = new AppConfig(args);
 
         assertTrue(ac.isDirectOutput());
         assertEquals("tests",ac.getInputK4().toString());
         assertEquals(".", ac.getInputImage().toString());
+        assertEquals("tests/input", ac.getKrameriusPath().toString());
+        assertEquals("tests/input/foxml", ac.getImageserverPath().toString());
     }
 
     @Test

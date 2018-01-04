@@ -159,11 +159,11 @@ public class AppConfig {
             }
 
             if (krameriusPath == null) {
-                throw new IllegalArgumentException("path to kramerius must be specified");
+                throw new IllegalArgumentException("output kramerius path must be specified");
             }
 
             if (imageserverPath == null) {
-                throw new IllegalArgumentException("path to imageserver must be specified");
+                throw new IllegalArgumentException("output imageserver path must be specified");
             }
 
         } else {
