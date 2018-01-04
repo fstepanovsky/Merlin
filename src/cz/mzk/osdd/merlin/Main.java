@@ -10,15 +10,17 @@ package cz.mzk.osdd.merlin;
 
 public class Main {
 
-    public static final String defaultPath = "";
-
     public static void main(String[] args) {
+        if (args.length == 0) {
+            System.out.print(Messages.DEFAULT_INFO);
+            return;
+        }
+
         ExportProcessor processor = null;
 
         if (args.length < 3) {
             if (args.length == 1) processor = new ExportProcessor(args[0]);
             if (args.length == 2) processor = new ExportProcessor(args[0], args[1]);
-            if (args.length == 0) processor = new ExportProcessor(defaultPath);
 
             System.exit(processor.runBatch());
         } else {
