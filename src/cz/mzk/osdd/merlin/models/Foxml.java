@@ -79,6 +79,7 @@ public class Foxml {
         }
 
         removeBinaryContent(img);
+        setControlGroup((Element) img.getParentNode(), "E");
 
         String selectedImageType = null;
 
@@ -127,6 +128,10 @@ public class Foxml {
         } else {
             throw new IllegalArgumentException("not containing single or none kramerius4:tiles-url");
         }
+    }
+
+    private void setControlGroup(Element img, String e) {
+        img.setAttribute("CONTROL_GROUP", e);
     }
 
     private String getImagePath() {
