@@ -1,7 +1,10 @@
 package cz.mzk.osdd.merlin.models;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Base64;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -72,13 +75,23 @@ public class Foxml {
      * @param datastream datastream to be edited
      * @throws IllegalArgumentException when unsupported datastream is selected or foxml is not valid
      */
-    public void processDatastream(String datastream) throws IllegalArgumentException {
+    public void processDatastream(String datastream) throws IllegalArgumentException, IOException {
 
         if (datastream == null) {
             throw new IllegalArgumentException("Datastream cannot be null.");
         }
 
-        Element parent = (Element) Utils.filterDatastreamFromDocument(doc, datastream).getParentNode();
+        Element thisElement = Utils.filterDatastreamFromDocument(doc, datastream);
+
+        if (thisElement == null) {
+            if (!(datastream.equals(DATASTREAM_ALTO) || datastream.equals(DATASTREAM_OCR))) {
+                throw new IllegalStateException("Missing datastream " + datastream);
+            } else {
+                return;
+            }
+        }
+
+        Element parent = (Element) thisElement.getParentNode();
         removeFedoraURI(parent);
 
         if (
@@ -134,7 +147,7 @@ public class Foxml {
         setContentLocation(img, selectedImageType);
     }
 
-    public void processOcrDatastream(String datastream) {
+    public void processOcrDatastream(String datastream) throws IOException {
         if (!(
                 datastream.equals(DATASTREAM_ALTO) ||
                 datastream.equals(DATASTREAM_OCR)
@@ -151,14 +164,14 @@ public class Foxml {
 
         removeBinaryContent(ocr);
 
-        Element cL = (Element) ocr.getElementsByTagName("contentLocation").item(0);
+        String content = removeContentLocation(ocr);
 
-        cL.setAttribute("TYPE", "URL");
+        if (content != null) {
+            Element binaryContent = doc.createElement("binaryContent");
+            binaryContent.setTextContent(content);
 
-        String refAttrVal = cL.getAttribute("REF");
-        refAttrVal = refAttrVal.replaceAll("localhost:8080", "proarc.staff.mzk.cz:1993");
-
-        cL.setAttribute("REF", refAttrVal);
+            ocr.appendChild(binaryContent);
+        }
     }
 
     /**
@@ -248,6 +261,49 @@ public class Foxml {
         e.removeChild(bC);
 
         e.removeAttribute("SIZE");
+    }
+
+    private String removeContentLocation(Element e) throws IOException {
+
+        // fedora does not have connection to proarc fedora
+        Element cL = (Element) e.getElementsByTagName("contentLocation").item(0);
+
+        cL.setAttribute("TYPE", "URL");
+
+        String refAttrVal = cL.getAttribute("REF");
+        refAttrVal = refAttrVal.replaceAll("localhost:8080", "proarc.staff.mzk.cz:1993");
+
+        String content = getBase64Encoded(refAttrVal);
+
+        NodeList imgFullChildren = e.getChildNodes();
+
+        Element bC = null;
+
+        for (int i = 0; i < imgFullChildren.getLength(); i++){
+            if (imgFullChildren.item(i).getNodeName().equals("contentLocation")) {
+                if (bC == null) {
+                    bC = (Element) imgFullChildren.item(i);
+                } else {
+                    throw new IllegalArgumentException("contains multiple contentLocation in " + e.getTagName());
+                }
+            }
+        }
+
+        if (bC == null) {
+            System.err.println("Warning: Element " + e.getTagName() + " does not contain contentLocation element");
+            return null;
+        }
+
+        e.removeChild(bC);
+
+        return content;
+    }
+
+    public String getBase64Encoded(String imageURL) throws IOException {
+        java.net.URL url = new java.net.URL(imageURL);
+        InputStream is = url.openStream();
+        byte[] bytes = org.apache.commons.io.IOUtils.toByteArray(is);
+        return Base64.getEncoder().encodeToString(bytes);
     }
 
     public void save(Path toKramerius) throws TransformerException {
