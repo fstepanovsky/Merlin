@@ -1,13 +1,12 @@
 import cz.mzk.osdd.merlin.models.Foxml;
 import cz.mzk.osdd.merlin.models.Utils;
+import java.io.File;
+import java.io.IOException;
+import javax.xml.parsers.ParserConfigurationException;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,13 +25,14 @@ public class FoxmlTests {
         return Utils.getDocumentFromFile(new File(TESTING_FOXML));
     }
 
-    @Test
-    public void processInvalidDatastream() throws ParserConfigurationException, SAXException, IOException {
-        Document d = getTestingDocument();
-        Foxml f = new Foxml(d, " ", "MZK01", "aaaaaaa1-1111-1111-1111-2f890f11f9d5");
-
-        assertThrows(IllegalArgumentException.class, () -> f.processDatastream("BIBLIO_MODS"));
-    }
+    //All datastreams are processable due to public fedora export which modifies all datastreams
+//    @Test
+//    public void processInvalidDatastream() throws ParserConfigurationException, SAXException, IOException {
+//        Document d = getTestingDocument();
+//        Foxml f = new Foxml(d, " ", "MZK01", "aaaaaaa1-1111-1111-1111-2f890f11f9d5");
+//
+//        assertThrows(IllegalArgumentException.class, () -> f.processDatastream("BIBLIOX_MODS"));
+//    }
 
     @Test
     public void processNullDatastream() throws ParserConfigurationException, SAXException, IOException {

@@ -27,6 +27,14 @@ public class Foxml {
     public static final String DATASTREAM_IMG_PREVIEW = "IMG_PREVIEW.0";
     public static final String DATASTREAM_IMG_THUMB = "IMG_THUMB.0";
 
+    public static final String DATASTREAM_OCR = "TEXT_OCR.";
+    public static final String DATASTREAM_ALTO = "ALTO.";
+
+    public static final String DATASTREAM_BIBLIO_MODS = "BIBLIO_MODS.";
+    public static final String DATASTREAM_DC = "DC.";
+    public static final String DATASTREAM_RELS_EXT = "RELS-EXT.";
+
+
     private Document doc;
     private String imagePath;
     private String base;
@@ -50,6 +58,14 @@ public class Foxml {
         this.uuid = uuid;
     }
 
+    public void removeFedoraURIFromRoot() {
+        removeFedoraURI((Element) doc.getElementsByTagName("digitalObject").item(0));
+    }
+
+    public void removeFedoraURI(Element element) {
+        element.removeAttribute("FEDORA_URI");
+    }
+
     /**
      * Modifies selected datastream data content from local binaryContent to contentLocation on imageserver
      *
@@ -62,14 +78,34 @@ public class Foxml {
             throw new IllegalArgumentException("Datastream cannot be null.");
         }
 
+        Element parent = (Element) Utils.filterDatastreamFromDocument(doc, datastream).getParentNode();
+        removeFedoraURI(parent);
+
         if (
-                !(
+
                 datastream.equals(DATASTREAM_IMG_FULL) ||
                 datastream.equals(DATASTREAM_IMG_PREVIEW) ||
-                datastream.equals(DATASTREAM_IMG_THUMB)
+                datastream.equals(DATASTREAM_IMG_THUMB))
+        {
+            processImgDatastream(datastream);
+        } else if (
+                datastream.equals(DATASTREAM_ALTO) ||
+                datastream.equals(DATASTREAM_OCR))
+        {
+            processOcrDatastream(datastream);
+        }
+
+    }
+
+    public void processImgDatastream(String datastream) {
+        if (
+                !(
+                        datastream.equals(DATASTREAM_IMG_FULL) ||
+                        datastream.equals(DATASTREAM_IMG_PREVIEW) ||
+                        datastream.equals(DATASTREAM_IMG_THUMB)
                 ))
         {
-            throw new IllegalArgumentException("Unsupported datastream: " + datastream + ".");
+            throw new IllegalArgumentException("Unsupported img datastream: " + datastream + ".");
         }
 
         Element img = Utils.filterDatastreamFromDocument(doc, datastream);
@@ -96,6 +132,33 @@ public class Foxml {
         }
 
         setContentLocation(img, selectedImageType);
+    }
+
+    public void processOcrDatastream(String datastream) {
+        if (!(
+                datastream.equals(DATASTREAM_ALTO) ||
+                datastream.equals(DATASTREAM_OCR)
+            ))
+        {
+            throw new IllegalArgumentException("Unsupported datastream: " + datastream + ".");
+        }
+
+        Element ocr = Utils.filterDatastreamFromDocument(doc, datastream);
+
+        if (ocr == null) {
+            throw new IllegalArgumentException("missing " + datastream);
+        }
+
+        removeBinaryContent(ocr);
+
+        Element cL = (Element) ocr.getElementsByTagName("contentLocation").item(0);
+
+        cL.setAttribute("TYPE", "URL");
+
+        String refAttrVal = cL.getAttribute("REF");
+        refAttrVal = refAttrVal.replaceAll("localhost:8080", "proarc.staff.mzk.cz:1993");
+
+        cL.setAttribute("REF", refAttrVal);
     }
 
     /**
@@ -178,7 +241,7 @@ public class Foxml {
         }
 
         if (bC == null) {
-            System.err.println("Warning: Element " + e.getTagName() + "does not contain binaryContent element");
+            System.err.println("Warning: Element " + e.getTagName() + " does not contain binaryContent element");
             return;
         }
 

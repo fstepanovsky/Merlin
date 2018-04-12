@@ -149,7 +149,7 @@ public class Utils {
         NodeList nl = doc.getElementsByTagName("datastreamVersion");
 
         for (int i = 0; i < nl.getLength(); i++) {
-            if (((Element) nl.item(i)).getAttribute("ID").equals(id)) return (Element) nl.item(i);
+            if (((Element) nl.item(i)).getAttribute("ID").startsWith(id)) return (Element) nl.item(i);
         }
 
         return null;

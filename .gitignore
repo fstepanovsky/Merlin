@@ -2,7 +2,7 @@
 junit-4.0.jar
 *.jar
 in/
-out/
+out*/
 .idea/workspace.xml
 .idea/misc.xml
 .idea/vcs.xml

@@ -43,7 +43,8 @@ public class Title {
     private String base = null;
 
     private Map<String, ExportPack> packs = new HashMap<>();
-    private List<String> notModifiedFOXMLs = null;
+    private Map<String, ExportPack> nonPagePacks = new HashMap<>();
+    //private List<String> nonPageFOXMLs = null;
 
     public Title(Path location, File[] files, String outputPackPath, boolean loud) throws IllegalArgumentException, ParserConfigurationException, SAXException, IOException {
         this.OUTPUT_PACK_PATH = outputPackPath;
@@ -112,10 +113,11 @@ public class Title {
         }
 
         for (String uuid : uuidsToRemove) {
+            nonPagePacks.put(uuid, packs.get(uuid));
             packs.remove(uuid);
         }
 
-        notModifiedFOXMLs = uuidsToRemove;
+        //nonPageFOXMLs = uuidsToRemove;
 
         //Test UUID format
         UUID uuid = UUID.fromString(parentUUID);
@@ -190,6 +192,7 @@ public class Title {
             createImageserverPath(outRoot, outImageserver, imsDirectory);
         }
 
+        //page packs
         for (ExportPack pack : packs.values()) {
 
             Path imagePath = imsDirectory.resolve(pack.uuid + ".jp2");
@@ -197,9 +200,15 @@ public class Title {
             Foxml f = new Foxml(Utils.getDocumentFromFile(pack.getKrameriusExportPath().toFile()), sysno, base, pack.uuid);
 
             try {
+                f.removeFedoraURIFromRoot();
                 f.processDatastream(Foxml.DATASTREAM_IMG_FULL);
                 f.processDatastream(Foxml.DATASTREAM_IMG_THUMB);
                 f.processDatastream(Foxml.DATASTREAM_IMG_PREVIEW);
+                f.processDatastream(Foxml.DATASTREAM_ALTO);
+                f.processDatastream(Foxml.DATASTREAM_OCR);
+                f.processDatastream(Foxml.DATASTREAM_BIBLIO_MODS);
+                f.processDatastream(Foxml.DATASTREAM_DC);
+                f.processDatastream(Foxml.DATASTREAM_RELS_EXT);
                 f.processRDF();
                 f.save(outFoxml);
             } catch (IllegalArgumentException e) {
@@ -225,17 +234,37 @@ public class Title {
             }
         }
 
-        for (String foxml : notModifiedFOXMLs) {
+        //nonPagePacks
+        for (ExportPack pack : nonPagePacks.values()) {
+            Foxml f = new Foxml(Utils.getDocumentFromFile(pack.getKrameriusExportPath().toFile()), sysno, base, pack.uuid);
+
             try {
-                Path targetPath = outFoxml.resolve(foxml + ".xml");
-
-                Files.copy(location.resolve(foxml + ".xml"), targetPath);
-
-                checkPermissions(targetPath, true, true, true);
-            } catch (FileAlreadyExistsException e) {
-                System.out.println("Warning: File: " + foxml + ".xml already exists. Skipping!");
+                f.removeFedoraURIFromRoot();
+                f.processDatastream(Foxml.DATASTREAM_BIBLIO_MODS);
+                f.processDatastream(Foxml.DATASTREAM_RELS_EXT);
+                f.processDatastream(Foxml.DATASTREAM_DC);
+                f.save(outFoxml);
+            } catch (IllegalArgumentException e) {
+                reportMissingPart(pack, e.getMessage());
+                return;
+            } catch (TransformerException e) {
+                System.err.println("Cannot save " + pack.uuid + ".xml. Terminating.");
+                e.printStackTrace();
+                return;
             }
         }
+
+//        for (String foxml : nonPageFOXMLs) {
+//            try {
+//                Path targetPath = outFoxml.resolve(foxml + ".xml");
+//
+//                Files.copy(location.resolve(foxml + ".xml"), targetPath);
+//
+//                checkPermissions(targetPath, true, true, true);
+//            } catch (FileAlreadyExistsException e) {
+//                System.out.println("Warning: File: " + foxml + ".xml already exists. Skipping!");
+//            }
+//        }
 
         if (k4Credentials != null && k4address != null) {
             Utils.requestKrameriusImport(parentUUID, k4address, k4Credentials);
