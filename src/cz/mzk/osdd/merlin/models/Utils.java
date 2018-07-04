@@ -57,14 +57,12 @@ public class Utils {
             signature  = signature.replaceAll(" ", "%20");
         }
 
-        int counter = 0;
-
         doc = getResponseFromAleph(signature, RETRY_COUNT);
 
         String set_number = doc.getElementsByTagName("set_number").item(0).getTextContent();
         String no_entries = doc.getElementsByTagName("no_entries").item(0).getTextContent();
 
-        counter = 0;
+        int counter = 0;
 
         do {
             try {
@@ -76,9 +74,9 @@ public class Utils {
 
             counter++;
         } while (
-                    counter < RETRY_COUNT &&
-                    doc.getElementsByTagName("doc_number").getLength() < 0
-                );
+            counter < RETRY_COUNT &&
+            doc.getElementsByTagName("doc_number").getLength() < 0
+        );
 
         if (counter == RETRY_COUNT) throw new IOException("Could not get sysno from Aleph.");
 
@@ -99,6 +97,12 @@ public class Utils {
         return Pair.create(sysno, base);
     }
 
+    /**
+     * Loads signature from foxml stored in directory param (root is defined by having same uuid in name as directory)
+     *
+     * @param directory directory containing k4 ProArc export
+     * @return export signature
+     */
     public static String getSignatureFromRootObject(Path directory) {
 
         String rootName = directory.toFile().getName();
@@ -113,7 +117,7 @@ public class Utils {
 
         File root = directory.resolve(rootName + ".xml").toFile();
 
-        Document doc = null;
+        Document doc;
 
         try {
             doc = getDocumentFromFile(root);
@@ -132,6 +136,15 @@ public class Utils {
         return msl.item(0).getTextContent();
     }
 
+    /**
+     * Loads DOM object from File
+     *
+     * @param file xml file to be loaded
+     * @return DOM xml document of file
+     * @throws ParserConfigurationException
+     * @throws IOException
+     * @throws SAXException
+     */
     public static Document getDocumentFromFile(File file) throws ParserConfigurationException, IOException, SAXException {
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -181,16 +194,22 @@ public class Utils {
 
             counter++;
         } while (
-                counter < retryCount &&
-                        doc.getElementsByTagName("set_number").getLength() < 1 &&
-                        doc.getElementsByTagName("no_entries").getLength() < 1
-                );
+            counter < retryCount &&
+                doc.getElementsByTagName("set_number").getLength() < 1 &&
+                doc.getElementsByTagName("no_entries").getLength() < 1
+        );
 
         if (counter == retryCount) return null;
 
         return doc;
     }
 
+    /**
+     * Moves contents of the second directory into the first.
+     *
+     * @param dir1 target directory
+     * @param dir2 source directory which will be moved to dir1
+     */
     public static void mergeTwoDirectories(File dir1, File dir2){
         String targetDirPath = dir1.getAbsolutePath();
         File[] files = dir2.listFiles();
@@ -200,6 +219,19 @@ public class Utils {
         }
     }
 
+    /**
+     * Sends HTTP request to kramerius for starting import of specified uuid
+     *
+     * Note that Kramerius must have ProArc export accessible at
+     * /opt/app-root/src/.kramerius4/import/ProArc/
+     *
+     * If request fails, IllegalStateException is thrown.
+     *
+     * @param parentUUID file name / uuid of export
+     * @param k4address http adress of Kramerius client
+     * @param k4credentials login credentials of Kramerius client
+     * @throws IOException
+     */
     public static void requestKrameriusImport(String parentUUID, String k4address, String k4credentials) throws IOException {
         String query = k4address + "/search/api/v4.6/processes/?def=parametrizedimport";
         String json =
@@ -263,6 +295,16 @@ public class Utils {
         return;
     }
 
+    /**
+     * Creates aleph update csv file into specified directory.
+     * This file is then processed by other applications
+     *
+     * @param parentUUID uuid of record to be updated (digitalniknihovna.cz link will be added)
+     * @param sysno sysno of record in Aleph
+     * @param base base of record in Aleph
+     * @param alephDirectory storage of update CSV records
+     * @throws IOException
+     */
     public static void prepareAlephUpdateRecord(String parentUUID, String sysno, String base, File alephDirectory) throws IOException {
 
         File csvFile = alephDirectory.toPath().resolve(parentUUID + ".csv").toFile();
