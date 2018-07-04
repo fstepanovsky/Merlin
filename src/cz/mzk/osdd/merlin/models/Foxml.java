@@ -61,7 +61,7 @@ public class Foxml {
         this.uuid = uuid;
     }
 
-    private void removeFedoraURIFromRoot() {
+    public void removeFedoraURIFromRoot() {
         removeFedoraURI((Element) doc.getElementsByTagName("digitalObject").item(0));
     }
 
