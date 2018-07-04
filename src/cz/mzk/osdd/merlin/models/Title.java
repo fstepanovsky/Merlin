@@ -33,17 +33,17 @@ public class Title {
     private static final String IMAGESERVER_REQUIRED_DIR_PERMS = "rwxrwxr-x";
     private static final String IMAGESERVER_REQUIRED_FILE_PERMS = "rwxr-xr--";
 
-    public final String OUTPUT_PACK_PATH;
-    public final boolean LOUD;
+    private final String OUTPUT_PACK_PATH;
+    private final boolean LOUD;
 
-    public final Path LOCATION;
+    private final Path LOCATION;
 
     private String parentUUID;
     private String sysno = null;
     private String base = null;
 
-    private Map<String, ExportPack> packs = new HashMap<>();
-    private Map<String, ExportPack> nonPagePacks = new HashMap<>();
+    private final Map<String, ExportPack> packs = new HashMap<>();
+    private final Map<String, ExportPack> nonPagePacks = new HashMap<>();
     //private List<String> nonPageFOXMLs = null;
 
     public Title(Path location, File[] files, String outputPackPath, boolean loud) throws IllegalArgumentException, ParserConfigurationException, SAXException, IOException {
@@ -87,7 +87,7 @@ public class Title {
                     packs.put(uuid, p);
                 }
             } else if (f.getName().equals("proarc_export_status.log")) {
-                continue;
+                //continue;
             } else {
                 throw new IllegalArgumentException("Unknown file type : " + f.getName());
             }
@@ -180,7 +180,7 @@ public class Title {
 
         if (!outFoxml.toFile().exists()) outFoxml.toFile().mkdirs();
 
-        checkPermissions(outFoxml, true, true, true);
+        checkPermissions(outFoxml, true, true);
 
         Path imsDirectory =
                 (outImageserver == null ?
@@ -227,7 +227,7 @@ public class Title {
                         PosixFilePermissions.fromString(
                                 IMAGESERVER_REQUIRED_FILE_PERMS
                         ));
-                checkPermissions(imagePath, false, false, false);
+                checkPermissions(imagePath, false, false);
 
             } catch (FileAlreadyExistsException e) {
                 System.out.println("Warning: Image: " + imagePath.getFileName() + " already exists at target destination: " + pack.getImageExportPath() + " Skipping.");
@@ -292,16 +292,16 @@ public class Title {
         );
 
         subPath = subPath.resolve(base);
-        checkPermissions(subPath, true, true, false);
+        checkPermissions(subPath, true, true);
         subPath = subPath.resolve(sysno.substring(0, 3));
-        checkPermissions(subPath, true, true, false);
+        checkPermissions(subPath, true, true);
         subPath = subPath.resolve(sysno.substring(3, 6));
-        checkPermissions(subPath, true, true, false);
+        checkPermissions(subPath, true, true);
         subPath = subPath.resolve(sysno.substring(6, sysno.length()));
-        checkPermissions(subPath, true, true, false);
+        checkPermissions(subPath, true, true);
     }
 
-    private void checkPermissions(Path path, boolean groupWrite, boolean othersExecute, boolean othersWrite) throws IOException {
+    private void checkPermissions(Path path, boolean groupWrite, boolean othersExecute) throws IOException {
         checkPermission(path, PosixFilePermission.GROUP_EXECUTE);
         if (groupWrite) {
             checkPermission(path, PosixFilePermission.GROUP_WRITE);

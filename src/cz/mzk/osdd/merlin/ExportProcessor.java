@@ -39,7 +39,7 @@ public class ExportProcessor {
     private String outputPackPath = "proarcExport_" + ((new SimpleDateFormat("yyyy.MM.dd_HH:mm:ss")).format(new Date()));
     private static final boolean DETAILED_OUTPUT = true;
 
-    private List<Title> titles = new LinkedList<>();
+    private final List<Title> titles = new LinkedList<>();
 
     public ExportProcessor(String path) {
         this(path, path);
@@ -155,16 +155,7 @@ public class ExportProcessor {
                     DIRECT_OUTPUT ? IMAGESERVER_PATH : null
             );
 
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-            return -1;
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            return -1;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return -1;
-        } catch (SAXException e) {
+        } catch (IllegalArgumentException | ParserConfigurationException | SAXException | IOException e) {
             e.printStackTrace();
             return -1;
         }
@@ -194,7 +185,7 @@ public class ExportProcessor {
         return 0;
     }
 
-    private void mergeImageAndKrameriusDirectories() throws IOException {
+    private void mergeImageAndKrameriusDirectories() {
         File[] subdirs = IN_PATH.toFile().listFiles(File::isDirectory);
         String dirName;
 

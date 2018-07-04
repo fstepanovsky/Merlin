@@ -92,9 +92,9 @@ public class FoxmlTests {
         assertEquals(0, Utils.filterDatastreamFromDocument(d, ds).getElementsByTagName("binaryContent").getLength());
         assertEquals(1, Utils.filterDatastreamFromDocument(d, ds).getElementsByTagName("contentLocation").getLength());
 
-        for (int i = 0; i < others.length; i++) {
-            assertEquals(1, Utils.filterDatastreamFromDocument(d, others[i]).getElementsByTagName("binaryContent").getLength());
-            assertEquals(0, Utils.filterDatastreamFromDocument(d, others[i]).getElementsByTagName("contentLocation").getLength());
+        for (String other : others) {
+            assertEquals(1, Utils.filterDatastreamFromDocument(d, other).getElementsByTagName("binaryContent").getLength());
+            assertEquals(0, Utils.filterDatastreamFromDocument(d, other).getElementsByTagName("contentLocation").getLength());
         }
     }
 }

@@ -61,11 +61,11 @@ public class Foxml {
         this.uuid = uuid;
     }
 
-    public void removeFedoraURIFromRoot() {
+    private void removeFedoraURIFromRoot() {
         removeFedoraURI((Element) doc.getElementsByTagName("digitalObject").item(0));
     }
 
-    public void removeFedoraURI(Element element) {
+    private void removeFedoraURI(Element element) {
         element.removeAttribute("FEDORA_URI");
     }
 

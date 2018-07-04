@@ -35,9 +35,8 @@ public class Utils {
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.parse(new URL(url).openStream());
 
-        return doc;
+        return db.parse(new URL(url).openStream());
     }
 
     /**
@@ -88,7 +87,7 @@ public class Utils {
             String label = ((Element) field.item(i)).getAttribute("label");
 
             if (label.equals("l")) {
-                base = ((Element) field.item(i)).getTextContent();
+                base = field.item(i).getTextContent();
             }
         }
 
@@ -171,8 +170,8 @@ public class Utils {
     private static Document getResponseFromAleph(String signature, int retryCount) throws IOException {
         Document doc;
 
-        for (int i = 0; i < ALEPH_BASES.length; i++) {
-            doc = getResponseFromAleph(ALEPH_BASES[i], signature, retryCount);
+        for (String alephBase : ALEPH_BASES) {
+            doc = getResponseFromAleph(alephBase, signature, retryCount);
 
             if (doc != null) return doc;
         }
@@ -285,14 +284,12 @@ public class Utils {
             String result = org.apache.commons.io.IOUtils.toString(in, "UTF-8");
             System.out.println("Kramerius response:");
             System.out.println(result);
-        } catch (Exception e) {
-
+        } catch (Exception ignored) {
+            //response does not have to be processed in any way
         }
 
         in.close();
         conn.disconnect();
-
-        return;
     }
 
     /**

@@ -30,7 +30,7 @@ public class Main {
         }
     }
 
-    public static ExportProcessor processCommandLine(String[] args) {
+    private static ExportProcessor processCommandLine(String[] args) {
         AppConfig config = new AppConfig(args);
 
         return ExportProcessor.createExportProcessor(config);
