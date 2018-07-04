@@ -36,7 +36,7 @@ public class Title {
     public final String OUTPUT_PACK_PATH;
     public final boolean LOUD;
 
-    public final Path location;
+    public final Path LOCATION;
 
     private String parentUUID;
     private String sysno = null;
@@ -50,7 +50,7 @@ public class Title {
         this.OUTPUT_PACK_PATH = outputPackPath;
         this.LOUD = loud;
 
-        this.location = location;
+        this.LOCATION = location;
 
         checkFiles(files);
     }
@@ -160,10 +160,10 @@ public class Title {
         if (LOUD) System.out.println("Started processing title " + parentUUID);
 
         if (LOUD) System.out.println("Receiving Sysno from Aleph");
-        Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getSignatureFromRootObject(this.location));
+        Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getSignatureFromRootObject(this.LOCATION));
 
         if (sb == null) {
-            System.err.println("Could not receive Sysno and Base from Aleph. Skipping title at: " + location);
+            System.err.println("Could not receive Sysno and Base from Aleph. Skipping title at: " + LOCATION);
             return;
         } else if (LOUD){
             System.out.println("Received Sysno from Aleph");
@@ -258,7 +258,7 @@ public class Title {
 //            try {
 //                Path targetPath = outFoxml.resolve(foxml + ".xml");
 //
-//                Files.copy(location.resolve(foxml + ".xml"), targetPath);
+//                Files.copy(LOCATION.resolve(foxml + ".xml"), targetPath);
 //
 //                checkPermissions(targetPath, true, true, true);
 //            } catch (FileAlreadyExistsException e) {

@@ -95,7 +95,6 @@ public class Foxml {
         removeFedoraURI(parent);
 
         if (
-
                 datastream.equals(DATASTREAM_IMG_FULL) ||
                 datastream.equals(DATASTREAM_IMG_PREVIEW) ||
                 datastream.equals(DATASTREAM_IMG_THUMB))
@@ -110,13 +109,12 @@ public class Foxml {
 
     }
 
-    public void processImgDatastream(String datastream) {
+    private void processImgDatastream(String datastream) {
         if (
-                !(
-                        datastream.equals(DATASTREAM_IMG_FULL) ||
-                        datastream.equals(DATASTREAM_IMG_PREVIEW) ||
-                        datastream.equals(DATASTREAM_IMG_THUMB)
-                ))
+            !(
+                datastream.equals(DATASTREAM_IMG_FULL) ||
+                datastream.equals(DATASTREAM_IMG_PREVIEW) ||
+                datastream.equals(DATASTREAM_IMG_THUMB)))
         {
             throw new IllegalArgumentException("Unsupported img datastream: " + datastream + ".");
         }
@@ -147,7 +145,7 @@ public class Foxml {
         setContentLocation(img, selectedImageType);
     }
 
-    public void processOcrDatastream(String datastream) throws IOException {
+    private void processOcrDatastream(String datastream) throws IOException {
         if (!(
                 datastream.equals(DATASTREAM_ALTO) ||
                 datastream.equals(DATASTREAM_OCR)
