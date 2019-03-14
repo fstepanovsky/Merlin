@@ -28,7 +28,7 @@ import org.xml.sax.SAXException;
 public class Title {
 
     private static final String FILE_K4_SUFFIX = ".xml";
-    private static final String FILE_IMAGE_SUFFIX = ".NDK_USER";
+    private static final String FILE_IMAGE_SUFFIX = ".jp2";
 
     private static final String IMAGESERVER_REQUIRED_DIR_PERMS = "rwxrwxr-x";
     private static final String IMAGESERVER_REQUIRED_FILE_PERMS = "rwxr-xr--";
