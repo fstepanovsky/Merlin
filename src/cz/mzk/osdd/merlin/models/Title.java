@@ -163,8 +163,7 @@ public class Title {
         Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getSignatureFromRootObject(this.LOCATION));
 
         if (sb == null) {
-            System.err.println("Could not receive Sysno and Base from Aleph. Skipping title at: " + LOCATION);
-            return;
+            throw new IllegalStateException("Could not receive Sysno and Base from Aleph for item: " + this.LOCATION);
         } else if (LOUD){
             System.out.println("Received Sysno from Aleph");
         }
