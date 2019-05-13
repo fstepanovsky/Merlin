@@ -160,7 +160,7 @@ public class Title {
         if (LOUD) System.out.println("Started processing title " + parentUUID);
 
         if (LOUD) System.out.println("Receiving Sysno from Aleph");
-        Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getSignatureFromRootObject(this.LOCATION));
+        Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getModsFromRootObject(this.LOCATION));
 
         if (sb == null) {
             throw new IllegalStateException("Could not receive Sysno and Base from Aleph for item: " + this.LOCATION);

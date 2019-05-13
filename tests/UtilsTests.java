@@ -1,11 +1,11 @@
+import cz.mzk.osdd.merlin.models.Mods;
 import cz.mzk.osdd.merlin.models.Pair;
 import cz.mzk.osdd.merlin.models.Utils;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import javax.xml.parsers.ParserConfigurationException;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,8 +36,14 @@ public class UtilsTests {
     }
 
     @Test
-    public void getSysnoWithBaseFromAlephTest() throws IOException {
-        assertEquals(Pair.create("001564911","MZK01"), Utils.getSysnoWithBaseFromAleph("Mpa-0174.951,3960-19"));
+    public void getSysnoWithBaseFromAlephNDKTest() throws IOException {
+        assertEquals(Pair.create("001564911","MZK01"), Utils.getSysnoWithBaseFromAleph(new Mods("1919", "Mpa-0174.951,3960-19")));
+    }
+
+    @Test
+    public void getSysnoWithBaseFromAlephSTTTest() throws IOException {
+        //document is missing signature in aleph, therefore test is failing for now
+        assertEquals(Pair.create("001260566","MZK03"), Utils.getSysnoWithBaseFromAleph(new Mods("1892", "???")));
     }
 
     @Test

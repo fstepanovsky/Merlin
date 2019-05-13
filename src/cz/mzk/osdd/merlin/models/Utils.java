@@ -11,6 +11,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -42,67 +44,94 @@ public class Utils {
     /**
      * request for MARC record from Aleph XServer with retrieval of Sysno and Base
      *
-     * @param signature
+     * @param mods
      * @return
      */
-    public static Pair<String, String> getSysnoWithBaseFromAleph(String signature) throws IOException {
-        Document doc;
+    public static Pair<String, String> getSysnoWithBaseFromAleph(Mods mods) throws IOException {
         String sysno;
         String base = null;
 
-        if (signature == null) return null;
+        if (mods == null) return null;
 
-        if (signature.contains(" ")) {
-            signature  = signature.replaceAll(" ", "%20");
+        List<Document> infoDocs = getResponseFromAleph(mods, RETRY_COUNT);
+
+        if (infoDocs.isEmpty()) {
+            throw new IllegalStateException("Could not find document with specified signature");
         }
 
-        doc = getResponseFromAleph(signature, RETRY_COUNT);
+        for (Document infoDoc : infoDocs) {
+            String set_number = infoDoc.getElementsByTagName("set_number").item(0).getTextContent();
+            String no_entries = infoDoc.getElementsByTagName("no_entries").item(0).getTextContent();
 
-        String set_number = doc.getElementsByTagName("set_number").item(0).getTextContent();
-        String no_entries = doc.getElementsByTagName("no_entries").item(0).getTextContent();
+            int counter = 0;
 
-        int counter = 0;
+            Document doc;
 
-        do {
-            try {
-                doc = getDocumentFromURL("http://aleph.mzk.cz/X?op=present&set_no=" + set_number + "&set_entry=" + no_entries + "&format=marc");
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
+            do {
+                try {
+                    doc = getDocumentFromURL("http://aleph.mzk.cz/X?op=present&set_no=" + set_number + "&set_entry=" + no_entries + "&format=marc");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+
+                counter++;
+            } while (
+                    counter < RETRY_COUNT &&
+                            doc.getElementsByTagName("doc_number").getLength() < 0
+            );
+
+            if (counter == RETRY_COUNT) throw new IOException("Could not get sysno from Aleph.");
+
+            //getById does not work, therefore we have to do it hard way
+            //= doc.getElementById("008").getTextContent();
+
+            String marc008 = null;
+            NodeList fixFields = doc.getElementsByTagName("fixfield");
+
+            for (int i = 0; i < fixFields.getLength(); i++) {
+                Element fixField = (Element) fixFields.item(i);
+
+                String id = fixField.getAttribute("id");
+
+                if (id.equals("008")) {
+                    marc008 = fixField.getTextContent();
+                }
             }
 
-            counter++;
-        } while (
-            counter < RETRY_COUNT &&
-            doc.getElementsByTagName("doc_number").getLength() < 0
-        );
-
-        if (counter == RETRY_COUNT) throw new IOException("Could not get sysno from Aleph.");
-
-        sysno = doc.getElementsByTagName("doc_number").item(0).getTextContent();
-
-        NodeList field = doc.getElementsByTagName("subfield");
-
-        for (int i = 0; i < field.getLength(); i++) {
-            String label = ((Element) field.item(i)).getAttribute("label");
-
-            if (label.equals("l")) {
-                base = field.item(i).getTextContent();
+            //check if year matches due to possible year ambiguity
+            if (marc008 == null || !marc008.contains(mods.getDateIssued())) {
+                System.out.println("Could not load year from document: " + mods.getPhysicalLocation());
+                continue;
             }
+
+            sysno = doc.getElementsByTagName("doc_number").item(0).getTextContent();
+
+            NodeList field = doc.getElementsByTagName("subfield");
+
+            for (int i = 0; i < field.getLength(); i++) {
+                String label = ((Element) field.item(i)).getAttribute("label");
+
+                if (label.equals("l")) {
+                    base = field.item(i).getTextContent();
+                }
+            }
+
+            if (sysno == null || !base.startsWith("MZK0")) return null;
+
+            return Pair.create(sysno, base);
         }
 
-        if (sysno == null || !base.startsWith("MZK0")) return null;
-
-        return Pair.create(sysno, base);
+        return null;
     }
 
     /**
-     * Loads signature from foxml stored in directory param (root is defined by having same uuid in name as directory)
+     * Loads information from foxml stored in directory param (root is defined by having same uuid in name as directory)
      *
      * @param directory directory containing k4 ProArc export
      * @return export signature
      */
-    public static String getSignatureFromRootObject(Path directory) {
+    public static Mods getModsFromRootObject(Path directory) {
 
         String rootName = directory.toFile().getName();
 
@@ -125,14 +154,7 @@ public class Utils {
             return null;
         }
 
-        NodeList msl = doc.getElementsByTagName("mods:shelfLocator");
-
-        if (msl.getLength() < 1) {
-            System.err.println("Signature not found within parent (" + root.getName() + ") record");
-            return null;
-        }
-
-        return msl.item(0).getTextContent();
+        return Mods.loadModsFromDoc(doc, rootName);
     }
 
     /**
@@ -167,25 +189,27 @@ public class Utils {
         return null;
     }
 
-    private static Document getResponseFromAleph(String signature, int retryCount) throws IOException {
-        Document doc;
+    private static List<Document> getResponseFromAleph(Mods mods, int retryCount) {
+        List<Document> docs = new LinkedList<>();
 
         for (String alephBase : ALEPH_BASES) {
-            doc = getResponseFromAleph(alephBase, signature, retryCount);
+            Document doc = getResponseFromAleph(alephBase, mods, retryCount);
 
-            if (doc != null) return doc;
+            if (doc != null) {
+                docs.add(doc);
+            }
         }
 
-        throw new IOException("Could not get record from Aleph");
+        return docs;
     }
 
-    private static Document getResponseFromAleph(String base, String signature,  int retryCount) {
+    private static Document getResponseFromAleph(String base, Mods mods,  int retryCount) {
         int counter = 0;
         Document doc;
 
         do {
             try {
-                doc = getDocumentFromURL("http://aleph.mzk.cz/X?base=" + base + "&op=find&request=sig=" + signature);
+                doc = getDocumentFromURL("http://aleph.mzk.cz/X?base=" + base + "&op=find&request=sig=" + mods.getPhysicalLocation());
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
