@@ -3,11 +3,7 @@ junit-4.0.jar
 *.jar
 in/
 out*/
-.idea/workspace.xml
-.idea/misc.xml
-.idea/vcs.xml
-.idea/libraries/commons_io_2_6.xml
-.idea/libraries/java_json.xml
+.idea
 *.jp2
 KMS/1ad862cd-7e4c-4150-b0d0-23f10d984170/1ad862cd-7e4c-4150-b0d0-23f10d984170.xml
 KMS/1ad862cd-7e4c-4150-b0d0-23f10d984170/befe0eef-181f-4818-9e04-b3909d26bacd.xml
