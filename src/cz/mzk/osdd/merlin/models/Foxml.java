@@ -209,6 +209,12 @@ public class Foxml {
     }
 
     private String getImagePath() {
+        if (base.equals("mrln"))
+            return IMAGESERVER_LOCATION + "/" +
+                    base + "/" +
+                    imagePath.substring(0, 3) + "/" +
+                    imagePath.substring(3, 6) + "/" +
+                    imagePath + "/";
         return IMAGESERVER_LOCATION + "/" +
                 base + "/" +
                 imagePath.substring(0, 3) + "/" +

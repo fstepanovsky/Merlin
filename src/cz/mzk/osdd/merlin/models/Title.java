@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
  * Created by Jakub Kremlacek on 3.4.17.
  */
 public class Title {
+    private static final String UNKNOWN_BASE_NAME = "mrln";
 
     private static final String FILE_K4_SUFFIX = ".xml";
     private static final String FILE_IMAGE_SUFFIX = ".jp2";
@@ -164,6 +165,7 @@ public class Title {
 
         if (sb == null) {
             throw new IllegalStateException("Could not receive Sysno and Base from Aleph for item: " + this.LOCATION);
+            sb = new Pair<>(parentUUID, UNKNOWN_BASE_NAME);
         } else if (LOUD){
             System.out.println("Received Sysno from Aleph");
         }
@@ -181,12 +183,20 @@ public class Title {
 
         checkPermissions(outFoxml, true, true);
 
-        Path imsDirectory =
-                (outImageserver == null ?
-                        outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
-                        outImageserver
-                ).resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
-
+        Path imsDirectory;
+        if (!base.equals(UNKNOWN_BASE_NAME)) {
+            imsDirectory =
+                    (outImageserver == null ?
+                            outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
+                            outImageserver
+                    ).resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
+        } else { // when using fallback base sysno contains uuid which we want preserve
+            imsDirectory =
+                    (outImageserver == null ?
+                            outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
+                            outImageserver
+                    ).resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno);
+        }
         if (!imsDirectory.toFile().exists()) {
             createImageserverPath(outRoot, outImageserver, imsDirectory);
         }
@@ -270,7 +280,9 @@ public class Title {
         }
 
         if (alephDirectory != null) {
-            Utils.prepareAlephUpdateRecord(parentUUID, sysno, base, alephDirectory);
+            if (!base.equals(UNKNOWN_BASE_NAME)) {
+                Utils.prepareAlephUpdateRecord(parentUUID, sysno, base, alephDirectory);
+            }
         }
 
         if (LOUD) System.out.println("Title " + parentUUID + " processed.");
