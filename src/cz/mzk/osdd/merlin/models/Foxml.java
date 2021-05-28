@@ -160,9 +160,13 @@ public class Foxml {
             throw new IllegalArgumentException("missing " + datastream);
         }
 
-        removeBinaryContent(ocr);
-
-        String content = removeContentLocation(ocr);
+        // if alto / ocr does not contain content location leave Element as it is
+        String content = null;
+        if (containsContentLocation(ocr)) {
+            // try remove cL from foxml, if not found skip
+            removeBinaryContent(ocr);
+            content = removeContentLocation(ocr);
+        }
 
         if (content != null) {
             Element binaryContent = doc.createElement("binaryContent");
@@ -322,4 +326,12 @@ public class Foxml {
         transformer.transform(source, streamResult);
     }
 
+    /**
+     * Check if xml element contains content location
+     * @param e xml element (node)
+     * @return true if contains cL
+     */
+    public static boolean containsContentLocation(Element e) {
+        return e.getElementsByTagName("contentLocation").item(0) != null;
+    }
 }

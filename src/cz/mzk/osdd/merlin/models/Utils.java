@@ -31,6 +31,7 @@ public class Utils {
 
     public static final int RETRY_COUNT = 3;
     public static final String[] ALEPH_BASES = {"mzk01", "mzk03"};
+    public static final String DOC_NOT_FOUND_EXCEPTION_MSG = "Could not find document with specified signature";
 
     public static Document getDocumentFromURL(String url) throws IOException, SAXException, ParserConfigurationException {
         if (url == null) return null;
@@ -56,7 +57,7 @@ public class Utils {
         List<Document> infoDocs = getResponseFromAleph(mods, RETRY_COUNT);
 
         if (infoDocs.isEmpty()) {
-            throw new IllegalStateException("Could not find document with specified signature");
+            throw new IllegalStateException(DOC_NOT_FOUND_EXCEPTION_MSG);
         }
 
         for (Document infoDoc : infoDocs) {

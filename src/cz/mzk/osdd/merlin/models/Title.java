@@ -161,11 +161,19 @@ public class Title {
         if (LOUD) System.out.println("Started processing title " + parentUUID);
 
         if (LOUD) System.out.println("Receiving Sysno from Aleph");
-        Pair<String, String> sb = Utils.getSysnoWithBaseFromAleph(Utils.getModsFromRootObject(this.LOCATION));
 
+        // workaround to still process doc even if not known by Aleph
+        Pair<String, String> sb = null;
+        try {
+            sb = Utils.getSysnoWithBaseFromAleph(Utils.getModsFromRootObject(this.LOCATION));
+        } catch (IllegalStateException e) {
+            if (e.getMessage().equals(Utils.DOC_NOT_FOUND_EXCEPTION_MSG)) {
+                sb = null;
+            }
+        }
         if (sb == null) {
-            throw new IllegalStateException("Could not receive Sysno and Base from Aleph for item: " + this.LOCATION);
-            sb = new Pair<>(parentUUID, UNKNOWN_BASE_NAME);
+            //throw new IllegalStateException("Could not receive Sysno and Base from Aleph for item: " + this.LOCATION);
+            sb = new Pair<>(parentUUID.replaceAll("-", ""), UNKNOWN_BASE_NAME);
         } else if (LOUD){
             System.out.println("Received Sysno from Aleph");
         }
@@ -308,7 +316,11 @@ public class Title {
         checkPermissions(subPath, true, true);
         subPath = subPath.resolve(sysno.substring(3, 6));
         checkPermissions(subPath, true, true);
-        subPath = subPath.resolve(sysno.substring(6, sysno.length()));
+        if (!base.equals(UNKNOWN_BASE_NAME)) {
+            subPath = subPath.resolve(sysno.substring(6, sysno.length()));
+        } else {
+            subPath = subPath.resolve(sysno);
+        }
         checkPermissions(subPath, true, true);
     }
 
