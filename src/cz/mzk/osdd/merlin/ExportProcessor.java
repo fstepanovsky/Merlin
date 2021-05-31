@@ -225,10 +225,27 @@ public class ExportProcessor {
         }
     }
 
+    /**
+     * Process default directory
+     *
+     * Default directory is defined as IN_PATH
+     * @throws IllegalArgumentException
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException
+     */
     private void processDirectory() throws IllegalArgumentException, ParserConfigurationException, SAXException, IOException {
         processDirectory(IN_PATH);
     }
 
+    /**
+     * Recursive directory processing
+     * @param directory base directory for processing
+     * @throws IllegalArgumentException when dir structure is malformed
+     * @throws IOException
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     */
     private void processDirectory(Path directory) throws IllegalArgumentException, IOException, SAXException, ParserConfigurationException {
         File[] subdirs = directory.toFile().listFiles(File::isDirectory);
         File[] files = directory.toFile().listFiles(File::isFile);
@@ -240,6 +257,11 @@ public class ExportProcessor {
         if (files.length > 0) titles.add(new Title(directory, files, outputPackPath, DETAILED_OUTPUT));
     }
 
+    /**
+     * Check and create necessary directories
+     * @return AppState status FINE or CREATED_DIRECTORIES
+     * @throws IllegalArgumentException when I/O dir exists as a file
+     */
     private AppState checkDirectories() throws IllegalArgumentException {
         boolean preparation = false;
 

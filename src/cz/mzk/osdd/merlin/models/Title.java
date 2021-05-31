@@ -296,6 +296,28 @@ public class Title {
         if (LOUD) System.out.println("Title " + parentUUID + " processed.");
     }
 
+    /**
+     * Create directory structure for imageserver
+     *
+     * Creation processes assume you have 9 digits
+     * sysno from Aleph (recognized using base) which is
+     * split into 3 dirs by 3 digits
+     * example sysno: 000329646, base: mzk01
+     * dir structure: mzk01/000/329/646
+     * or the base is set to UNKNOWN_BASE_NAME.
+     *
+     * If UNKNOWN_BASE_NAME is present in base
+     * it is assumed that sysno contains root
+     * title uuid from which is created 2 dirs
+     * named by 3 chars each and 3rd dir is
+     * whole uuid without hyphens for example
+     * uuid: 2f30448f-78c5-4d41-981c-b4c0eae300a2, base: mrln
+     * dir structure: mrln/2f3/044/2f30448f78c54d41981cb4c0eae300a2
+     * @param outRoot
+     * @param outImageserver if null outRoot + OUTPUT_PACK_PATH + "imageserver" is used instead
+     * @param imsDirectory
+     * @throws IOException
+     */
     private void createImageserverPath(Path outRoot, Path outImageserver, Path imsDirectory) throws IOException {
         Files.createDirectories(
                 imsDirectory,
