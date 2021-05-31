@@ -56,10 +56,6 @@ public class Title {
         checkFiles(files);
     }
 
-    public int getPackCount() {
-        return packs.size();
-    }
-
     private void checkFiles(File[] files) throws IllegalArgumentException, IOException, SAXException, ParserConfigurationException {
         for (File f : files) {
             String uuid;
@@ -124,7 +120,7 @@ public class Title {
         UUID uuid = UUID.fromString(parentUUID);
 
         if (LOUD) {
-            System.out.println("Title " + uuid.toString() + " filecheck completed.");
+            System.out.println("Title " + uuid + " filecheck completed.");
         }
     }
 
@@ -197,7 +193,7 @@ public class Title {
                     (outImageserver == null ?
                             outRoot.resolve(OUTPUT_PACK_PATH).resolve("imageserver") :
                             outImageserver
-                    ).resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6, sysno.length()));
+                    ).resolve(base).resolve(sysno.substring(0, 3)).resolve(sysno.substring(3, 6)).resolve(sysno.substring(6));
         } else { // when using fallback base sysno contains uuid which we want preserve
             imsDirectory =
                     (outImageserver == null ?
@@ -271,18 +267,6 @@ public class Title {
             }
         }
 
-//        for (String foxml : nonPageFOXMLs) {
-//            try {
-//                Path targetPath = outFoxml.resolve(foxml + ".xml");
-//
-//                Files.copy(LOCATION.resolve(foxml + ".xml"), targetPath);
-//
-//                checkPermissions(targetPath, true, true, true);
-//            } catch (FileAlreadyExistsException e) {
-//                System.out.println("Warning: File: " + foxml + ".xml already exists. Skipping!");
-//            }
-//        }
-
         if (k4Credentials != null && k4address != null) {
             Utils.requestKrameriusImport(parentUUID, k4address, k4Credentials);
         }
@@ -339,7 +323,7 @@ public class Title {
         subPath = subPath.resolve(sysno.substring(3, 6));
         checkPermissions(subPath, true, true);
         if (!base.equals(UNKNOWN_BASE_NAME)) {
-            subPath = subPath.resolve(sysno.substring(6, sysno.length()));
+            subPath = subPath.resolve(sysno.substring(6));
         } else {
             subPath = subPath.resolve(sysno);
         }
